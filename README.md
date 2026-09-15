@@ -18,7 +18,7 @@
     <a href="#-tentang-kelola">Tentang Kelola</a> •
     <a href="#-fitur-unggulan">Fitur Unggulan</a> •
     <a href="#-tabel-perbandingan">Perbandingan</a> •
-    <a href="#-sistem-penyimpanan-data-arsitektur-local-first">Peta Konsep & Arsitektur</a> •
+    <a href="#-sistem-penyimpanan-data-arsitektur-local-first">Sistem Penyimpanan</a> •
     <a href="#%EF%B8%8F-teknologi--pustaka">Teknologi</a> •
     <a href="#-panduan-instalasi--build">Instalasi & Build</a>
   </p>
@@ -72,70 +72,53 @@ Banyak mahasiswa memulai usaha di lingkungan kampus—mulai dari berjualan makan
 
 ## 💾 Sistem Penyimpanan Data (Arsitektur Local-First)
 
-Kelola mengadopsi prinsip **100% Local-First**, di mana penyimpanan internal perangkat ponsel bertindak sebagai sumber kebenaran tunggal (*Single Source of Truth*). Seluruh data bisnis mahasiswa disimpan, diproses, dan diisolasi secara privat di dalam perangkat tanpa ketergantungan pada server cloud atau jaringan internet.
+Kelola mengadopsi prinsip **100% Local-First**, di mana seluruh data bisnis mahasiswa disimpan, diproses, dan dikelola secara mandiri langsung di dalam memori internal perangkat ponsel tanpa ketergantungan pada server cloud maupun koneksi internet.
 
-### 🗺️ Peta Konsep Aliran Data Local-First
+### 🔍 Cara Kerja Sistem Penyimpanan Local-First
 
-```mermaid
-flowchart TD
-    %% Lapisan 1: Aksi Pengguna
-    UI["📱 <b>Antarmuka Pengguna (Jetpack Compose)</b><br/>Input Transaksi • Catat Kasbon • Atur Stok • Arus Kas"]
+1. **Penyimpanan Primer di Perangkat (*Device-as-Primary*)**:
+   - Berbeda dengan aplikasi POS berbasis cloud yang rentan gagal transaksi saat sinyal hilang, Kelola menjadikan basis data SQLite internal (`kelola_database.db`) di ponsel pengguna sebagai sumber kebenaran tunggal (*Single Source of Truth*).
+   - Seluruh data transaksi, keranjang belanja, katalog produk, daftar kasbon teman, pengingat uang kembalian, dan arus kas tercatat secara lokal.
 
-    %% Lapisan 2: State & ViewModel
-    VM["⚙️ <b>Manajemen State (MainViewModel)</b><br/>Memproses logika bisnis via Kotlin Coroutines (Dispatchers.IO)"]
+2. **Abstraksi Modern dengan Android Jetpack Room**:
+   - Menggunakan **Room Persistence Library** sebagai lapisan abstraksi resmi dari Google di atas SQLite murni.
+   - Pengecekan kueri SQL diverifikasi langsung saat waktu kompilasi (*compile-time verification*), mencegah bug dan kerusakan skema saat aplikasi berjalan.
+   - Mengelompokkan akses data melalui *Data Access Objects* (DAOs) terisolasi: `TransactionDao`, `ProductDao`, `DebtDao`, dan `CashFlowDao`.
 
-    %% Lapisan 3: Abstraksi Data (Room)
-    ROOM["🗄️ <b>Abstraksi Data (Android Jetpack Room)</b><br/>DAOs: ProductDao • TransactionDao • DebtDao • CashFlowDao"]
+3. **Operasi Data Asinkron & Reaktif (*Zero Latency*)**:
+   - Seluruh operasi penulisan dan pembacaan data dieksekusi di *background thread* menggunakan **Kotlin Coroutines** (`Dispatchers.IO`), sehingga antarmuka visual tetap ringan dan mulus (*60/120 FPS*).
+   - Perubahan data disalurkan secara reaktif ke antarmuka Jetpack Compose melalui **StateFlow**, menyajikan pembaruan data secara instan tanpa perlu memuat ulang (*pull-to-refresh*).
 
-    %% Lapisan 4: SQLite Internal
-    SQLITE[("💾 <b>SQLite Database Engine (Local Storage)</b><br/><i>kelola_database.db</i> di dalam Private Sandbox HP")]
+4. **Isolasi Keamanan Sandbox**:
+   - Basis data disimpan di dalam direktori privat aplikasi (`/data/data/com.aistudio.kelola/databases/`).
+   - Sistem operasi Android melindungi direktori ini dengan mekanisme *application sandboxing*, memastikan data omset, margin keuntungan, dan catatan kasbon teman terlindungi dari aplikasi lain di HP.
 
-    %% Lapisan 5: Pilar Karakteristik Local-First
-    subgraph Pillars ["🛡️ 4 Karakteristik Utama Sistem Local-First"]
-        direction LR
-        P1["⚡ <b>0ms Latency</b><br/>Baca/tulis instan tanpa loading spinner"]
-        P2["📶 <b>100% Offline</b><br/>Berfungsi penuh tanpa koneksi internet"]
-        P3["🔒 <b>Privasi Mutlak</b><br/>Data omset & pelanggan aman di HP"]
-        P4["💾 <b>Backup Mandiri</b><br/>Ekspor / impor berkas DB & JSON"]
-    end
-
-    %% Relasi Aliran Data
-    UI -->|"1. Kirim Aksi / Event Pengguna"| VM
-    VM -->|"2. Eksekusi Kueri di Background Thread"| ROOM
-    ROOM -->|"3. Operasi CRUD Langsung ke Disk"| SQLITE
-    SQLITE -->|"4. StateFlow / Flow Reaktif Kembali ke UI"| UI
-    SQLITE -.->|"Menjamin Kapabilitas"| Pillars
-
-    %% Styling
-    classDef mainNode fill:#F0F7FF,stroke:#0284C7,stroke-width:2px,color:#0C4A6E;
-    classDef dbNode fill:#ECFDF5,stroke:#059669,stroke-width:2px,color:#064E3B;
-    classDef pillarNode fill:#FFFBEB,stroke:#D97706,stroke-width:1.5px,color:#78350F;
-
-    class UI,VM,ROOM mainNode;
-    class SQLITE dbNode;
-    class P1,P2,P3,P4 pillarNode;
-```
+5. **Kedaulatan & Portabilitas Data Mandiri**:
+   - Pengguna memiliki kendali penuh atas data mereka tanpa terkunci ke ekosistem tertentu (*zero vendor lock-in*).
+   - Menyediakan fitur pencadangan (*backup*) dan pemulihan (*restore*) mandiri berkas basis data lokal untuk memudahkan migrasi saat berganti smartphone.
 
 <br />
 
-### 🧱 Komponen Penyimpanan Data
+### 🧱 Matriks Komponen Penyimpanan
 
-| Komponen | Teknologi | Lokasi / Berkas | Fungsi Utama |
+| Lapisan / Komponen | Teknologi yang Digunakan | Lokasi / Berkas | Peran dalam Sistem |
 | :--- | :--- | :--- | :--- |
-| **Penyimpanan Primer** | SQLite Database Engine | Memori Internal HP (`kelola_database.db`) | Menyimpan seluruh tabel relasional transaksi, kasbon, katalog, dan arus kas secara lokal. |
-| **Object Relational Mapping (ORM)** | Android Jetpack Room | `KelolaDatabase` & Data Access Objects (DAOs) | Menyediakan abstraksi kueri SQL dengan validasi sintaks saat kompilasi (*compile-time check*). |
-| **Jalur Reaktif & Latar Belakang** | Kotlin Coroutines & Flow | `Dispatchers.IO` & `StateFlow` | Menjamin operasi baca/tulis data berat tidak menghambat antarmuka visual (*zero UI lag/freezing*). |
-| **Isolasi Keamanan Data** | Android App Sandbox | `/data/data/com.aistudio.kelola/` | Mengamankan data agar hanya dapat diakses oleh aplikasi Kelola dan terlindungi dari pihak luar. |
-| **Portabilitas Data** | File I/O Engine | Internal Storage / Documents | Memungkinkan pencadangan (*backup*) dan pemulihan (*restore*) basis data kapan saja saat berganti ponsel. |
+| **Penyimpanan Fisik** | SQLite Database Engine | Memori Internal HP (`kelola_database.db`) | Menyimpan seluruh tabel relasional transaksi, kasbon, katalog, dan arus kas. |
+| **Lapisan ORM** | Android Jetpack Room | `KelolaDatabase` & DAOs | Memetakan objek data Kotlin ke tabel SQL dan mengeksekusi kueri terstruktur. |
+| **Jalur Reaktif** | Kotlin Coroutines & Flow | `Dispatchers.IO` & `StateFlow` | Menjamin operasi baca/tulis berjalan di latar belakang tanpa membekukan antarmuka (*zero lag*). |
+| **Keamanan Data** | Android App Sandbox | Direktori Privat Aplikasi | Mengisolasi database agar tidak dapat diakses atau diintip oleh aplikasi pihak ketiga. |
+| **Cadangan Data** | File I/O Engine | Format `.db` / `.json` | Memberikan kebebasan ekspor dan impor data secara mandiri tanpa biaya server. |
 
 <br />
 
-### 🌟 Mengapa Pendekatan Local-First Terbaik untuk Mahasiswa?
+### 🌟 4 Keunggulan Nyata bagi Mahasiswa Pejuang Usaha
 
-1. **🔒 Zero Data Leakage / 100% Privat**: Data omset, keuntungan, dan daftar pelanggan tidak pernah dikirim ke server luar atau pihak ketiga.
-2. **💰 Tanpa Biaya Server & Bebas Selamanya**: Tidak memerlukan biaya langganan database cloud, sewa server bulanan, ataupun kuota internet saat berjualan.
-3. **⚡ Kecepatan Instan (0ms Latency)**: Seluruh operasi baca dan tulis terjadi langsung pada penyimpanan internal perangkat tanpa waktu tunggu (*loading spinner*).
-4. **💾 Cadangkan & Pulihkan (Backup & Restore)**: Pengguna dapat mengekspor seluruh basis data ke format berkas lokal untuk dipindahkan ke smartphone baru kapan saja.
+| Keunggulan | Manfaat Nyata di Lapangan |
+| :--- | :--- |
+| ⚡ **0ms Latensi (Instan)** | Transaksi kasir selesai seketika tanpa perlu menunggu respon server atau jaringan lemot. |
+| 📶 **100% Bebas Kuota & Sinyal** | Berjualan di ruang kelas bertingkat, lorong kampus, basement, kantin, maupun bazar bazar outdoor tetap lancar tanpa internet. |
+| 🔒 **Privasi & Keamanan Mutlak** | Data omset, margin laba, dan catatan hutang teman tidak pernah diunggah ke server pihak mana pun. |
+| 💰 **Bebas Biaya Selamanya** | Tidak ada biaya sewa hosting database, langganan API bulanan, ataupun potongan biaya per transaksi. |
 
 ---
 
