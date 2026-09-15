@@ -320,28 +320,18 @@ private fun PromoScreenTopBar(
                     shape = KelolaRadius.ShapeSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-                        .height(36.dp)
+                        .size(36.dp)
                         .testTag("button_open_create_promo")
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Tambah Promo",
                             tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Tambah Promo",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            maxLines = 1,
-                            softWrap = false
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -984,28 +974,20 @@ private fun CreateEditPromoScreenContent(
                     Surface(
                         onClick = { showRequiredProductPicker = true },
                         shape = KelolaRadius.ShapeSmall,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.testTag("button_add_required_product")
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("button_add_required_product")
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
                         ) {
                             Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Tambah Produk",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                softWrap = false
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Tambah Produk",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
@@ -1019,12 +1001,36 @@ private fun CreateEditPromoScreenContent(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "Belum ada produk syarat. Klik 'Tambah Produk' untuk menentukan barang yang harus dibeli pelanggan.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(14.dp)
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showRequiredProductPicker = true }
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Belum ada produk syarat. Klik tombol '+' untuk menambahkan barang.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Tambah Produk",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(KelolaSpacing.Space2)) {
@@ -1243,17 +1249,21 @@ private fun CreateEditPromoScreenContent(
                             onClick = { showFreeProductPicker = true },
                             shape = KelolaRadius.ShapeSmall,
                             color = SuccessGreen,
-                            modifier = Modifier.testTag("button_select_free_product")
+                            modifier = Modifier
+                                .size(36.dp)
+                                .testTag("button_select_free_product")
                         ) {
-                            Text(
-                                text = if (selectedFreeProductId == null) "Pilih Hadiah" else "Ganti Hadiah",
-                                color = Color.White,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                maxLines = 1,
-                                softWrap = false
-                            )
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    imageVector = if (selectedFreeProductId == null) Icons.Default.Add else Icons.Default.Check,
+                                    contentDescription = "Pilih Hadiah",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
 
@@ -1265,14 +1275,37 @@ private fun CreateEditPromoScreenContent(
                         Surface(
                             shape = KelolaRadius.ShapeInput,
                             color = MaterialTheme.colorScheme.surface,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showFreeProductPicker = true }
                         ) {
-                            Text(
-                                text = "Belum ada produk gratis yang dipilih. Klik tombol 'Pilih Hadiah' di atas.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(14.dp)
-                            )
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Belum ada produk gratis yang dipilih. Klik tombol '+' untuk memilih hadiah.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Surface(
+                                    shape = CircleShape,
+                                    color = SuccessGreen,
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Pilih Hadiah",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     } else {
                         Surface(
