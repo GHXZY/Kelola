@@ -10,7 +10,6 @@
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.0+-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
   [![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack_Compose_Material3-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
   [![Room Database](https://img.shields.io/badge/Database-Room_Local--First-FF6F00?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
-  [![License](https://img.shields.io/badge/License-MIT-006199?style=for-the-badge)](LICENSE)
 
   <br />
 
@@ -43,19 +42,12 @@ Banyak mahasiswa memulai usaha di lingkungan kampus—mulai dari berjualan makan
 ## ✨ Fitur Unggulan
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        CORE FEATURES AT A GLANCE                       │
-├───────────────────┬─────────────────────┬──────────────────────────────┤
-│ 🛒 KASIR INSTAN   │ 🤝 KASBON & UTANG   │ 🪙 KEMBALIAN TERTUNDA        │
-│ Transaksi cepat,  │ Catat nama teman,   │ Simpan pengingat kembalian   │
-│ keranjang belanja,│ rincian barang,     │ receh yang belum diberikan,  │
-│ tunai & QRIS statis  nominal, & status pelunasan │ lunasi saat uang pas ada   │
-├───────────────────┼─────────────────────┼──────────────────────────────┤
-│ 📦 MANAJEMEN STOK │ 📊 LAPORAN BISNIS   │ 📐 RESPONSIF MULTI-UKURAN    │
-│ Hitung harga modal│ Laba bersih harian, │ Presisi tinggi di layar      │
-│ & jual, restock,  │ produk terlaris,    │ 360dp, 412dp, hingga 430dp   │
-│ kategori kustom   │ kerugian & arus kas │ dengan Oceanic Design System │
-└───────────────────┴─────────────────────┴──────────────────────────────┘
+| 🛒 **KASIR INSTAN**                                     | 🤝 **KASBON & UTANG**                                         | 🪙 **KEMBALIAN TERTUNDA**                                                       |
+| ------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Transaksi cepat, keranjang belanja, tunai & QRIS statis | Catat nama teman, rincian barang, nominal, & status pelunasan | Simpan pengingat kembalian receh yang belum diberikan, lunasi saat uang pas ada |
+| 📦 **MANAJEMEN STOK**                                   | 📊 **LAPORAN BISNIS**                                         | 📐 **RESPONSIF MULTI-UKURAN**                                                   |
+| Hitung harga modal & jual, restock, kategori kustom     | Laba bersih harian, produk terlaris, kerugian & arus kas      | Presisi tinggi di layar 360dp, 412dp, hingga 430dp dengan Oceanic Design System |
+
 ```
 
 ### 1. ⚡ Kasir Cepat & Keranjang Pintar
@@ -100,20 +92,32 @@ Banyak mahasiswa memulai usaha di lingkungan kampus—mulai dari berjualan makan
 Kelola mengadopsi prinsip **100% Local-First**, di mana kedaulatan data sepenuhnya berada di tangan pengguna:
 
 ```
-[ Antarmuka Jetpack Compose ]
-              ▲
-              │ (StateFlow)
-              ▼
-   [ MainViewModel (MVVM) ]
-              ▲
-              │ (Coroutines Flow)
-              ▼
-    [ Room Database (DAOs) ]
-              │
-    ┌─────────┴─────────┐
-    ▼                   ▼
-[ SQLite Engine ]   [ Local App Sandbox ]
- (kelola_database)   (/data/data/com.aistudio.kelola.kasir/)
+flowchart TB
+    UI["🖥️ Antarmuka<br/>Jetpack Compose"]
+
+    VM["⚙️ MainViewModel<br/><small>MVVM</small>"]
+
+    ROOM["🗄️ Room Database<br/><small>DAOs</small>"]
+
+    SQLITE["💾 SQLite Engine<br/><small>kelola_database</small>"]
+
+    SANDBOX["📁 Local App Sandbox<br/><small>/data/data/com.aistudio.kelola.kasir/</small>"]
+
+    UI <-->|StateFlow| VM
+    VM <-->|Coroutines Flow| ROOM
+
+    ROOM --> SQLITE
+    ROOM --> SANDBOX
+
+    classDef ui fill:#E8F1FF,stroke:#2878D8,stroke-width:2px,color:#06111F
+    classDef vm fill:#EAF8F1,stroke:#20A56A,stroke-width:2px,color:#06111F
+    classDef db fill:#F1ECFF,stroke:#7657D9,stroke-width:2px,color:#06111F
+    classDef storage fill:#FFF4E5,stroke:#E89B2C,stroke-width:2px,color:#06111F
+
+    class UI ui
+    class VM vm
+    class ROOM db
+    class SQLITE,SANDBOX storage
 ```
 
 ### Mengapa Pendekatan Ini Terbaik untuk Mahasiswa?
