@@ -589,6 +589,7 @@ fun EmptyState(
     description: String,
     buttonText: String? = null,
     onButtonClick: (() -> Unit)? = null,
+    buttonIcon: ImageVector? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -631,6 +632,7 @@ fun EmptyState(
             Spacer(modifier = Modifier.height(20.dp))
             KelolaPrimaryButton(
                 text = buttonText,
+                icon = buttonIcon,
                 onClick = onButtonClick
             )
         }

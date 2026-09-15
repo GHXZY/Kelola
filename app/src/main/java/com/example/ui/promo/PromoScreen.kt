@@ -315,20 +315,35 @@ private fun PromoScreenTopBar(
             }
 
             if (!isEditing) {
-                IconButton(
+                Surface(
                     onClick = onOpenCreate,
+                    shape = KelolaRadius.ShapeSmall,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-                        .size(KelolaSpacing.MinTouchTarget)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .height(36.dp)
                         .testTag("button_open_create_promo")
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Buat Promo Baru",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Tambah Promo",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Tambah Promo",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
                 }
             }
         }
@@ -475,7 +490,8 @@ private fun PromoListScreenContent(
                     } else {
                         "Tidak ada promo yang sesuai dengan kata kunci atau filter saat ini."
                     },
-                    buttonText = if (promos.isEmpty()) "Buat Promo Pertama" else null,
+                    buttonText = if (promos.isEmpty()) "Tambah Promo" else null,
+                    buttonIcon = if (promos.isEmpty()) Icons.Default.Add else null,
                     onButtonClick = if (promos.isEmpty()) onAddNew else null,
                     modifier = Modifier.padding(top = 16.dp)
                 )
@@ -984,7 +1000,7 @@ private fun CreateEditPromoScreenContent(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Pilih Produk",
+                                text = "Tambah Produk",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -1004,7 +1020,7 @@ private fun CreateEditPromoScreenContent(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "Belum ada produk syarat. Klik 'Pilih Produk' untuk menentukan barang yang harus dibeli pelanggan.",
+                            text = "Belum ada produk syarat. Klik 'Tambah Produk' untuk menentukan barang yang harus dibeli pelanggan.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(14.dp)
