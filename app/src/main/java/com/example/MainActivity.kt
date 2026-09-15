@@ -8,16 +8,20 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -93,7 +97,9 @@ import com.example.ui.reports.TransactionDetailDialog
 import com.example.ui.settings.SettingsDialog
 import com.example.ui.settings.SettingsScreen
 import com.example.ui.theme.BorderLight
+import com.example.ui.theme.BrandPrimary
 import com.example.ui.theme.BrandSky
+import com.example.ui.theme.DangerRed
 import com.example.ui.theme.KelolaSpacing
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.OnPrimaryBlueContainer
@@ -124,13 +130,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val themeMode by viewModel.themeMode.collectAsState()
+            val viewportWidth by viewModel.viewportWidth.collectAsState()
+            val maxDeviceWidth = when (viewportWidth) {
+                "360dp" -> 360.dp
+                "430dp" -> 430.dp
+                else -> 412.dp
+            }
             val isDark = when (themeMode) {
                 "DARK" -> true
                 "LIGHT" -> false
                 else -> isSystemInDarkTheme()
             }
             MyApplicationTheme(darkTheme = isDark) {
-                MainApp(viewModel = viewModel)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .widthIn(max = maxDeviceWidth)
+                    ) {
+                        MainApp(viewModel = viewModel)
+                    }
+                }
             }
         }
     }
@@ -381,20 +406,19 @@ fun MainApp(viewModel: MainViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = KelolaSpacing.ScreenMargin, vertical = KelolaSpacing.Space2),
+                        .padding(horizontal = KelolaSpacing.ScreenMargin, vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space3)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // High Density Brand Emblem or Back Button if viewing Debts
                         if (isShowingDebts) {
                             IconButton(
                                 onClick = { isShowingDebts = false },
                                 modifier = Modifier
-                                    .size(KelolaSpacing.MinTouchTarget)
+                                    .size(36.dp)
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                                     .testTag("button_back_from_debts")
@@ -403,59 +427,60 @@ fun MainApp(viewModel: MainViewModel) {
                                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Kembali",
                                     tint = PrimaryBlue,
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = "Daftar Kasbon",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Orang Belum Bayar / Hutang",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         } else {
                             KelolaLogoBadge(
-                                size = KelolaSpacing.MinTouchTarget,
-                                iconSize = KelolaSpacing.MaxIconInTarget
+                                size = 36.dp,
+                                iconSize = 20.dp
                             )
-                        }
-
-                        Column {
-                            Text(
-                                text = if (isShowingDebts) "Daftar Penghutang" else if (currentScreen == Screen.Home) "Kelola" else currentScreen.title,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = PrimaryBlue,
-                                letterSpacing = (-0.3).sp
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space1)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isShowingDebts) WarningAmber else SuccessDot)
+                            Column {
+                                Text(
+                                    text = if (currentScreen == Screen.Home) (businessName.ifEmpty { "Kelola" }) else currentScreen.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = if (isShowingDebts) "BAYAR NANTI / HUTANG" else if (currentScreen == Screen.Home) "DATABASE LOCAL" else businessName.uppercase(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = TextSecondary,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.8.sp
+                                    text = if (currentScreen == Screen.Home) "Aplikasi Kasir Usaha" else businessName.ifEmpty { "Kelola" },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     }
 
-                    // Settings Button (44x44px minimum touch target)
+                    // Settings Button (Round button with border matching preview)
                     IconButton(
                         onClick = { isShowingSettings = true },
                         modifier = Modifier
-                            .size(KelolaSpacing.MinTouchTarget)
+                            .size(36.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), CircleShape)
                             .testTag("button_open_settings")
                     ) {
                         Icon(
                             Icons.Default.Settings,
                             contentDescription = "Pengaturan",
-                            tint = TextSecondary,
-                            modifier = Modifier.size(22.dp)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -464,11 +489,13 @@ fun MainApp(viewModel: MainViewModel) {
         bottomBar = {
             Surface(
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 0.dp
+                tonalElevation = 0.dp,
+                modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
             ) {
                 NavigationBar(
                     containerColor = Color.Transparent,
-                    tonalElevation = 0.dp
+                    tonalElevation = 0.dp,
+                    modifier = Modifier.height(64.dp)
                 ) {
                     screens.forEachIndexed { index, screen ->
                         val isSelected = !isShowingDebts && selectedScreenIndex == index
@@ -483,7 +510,7 @@ fun MainApp(viewModel: MainViewModel) {
                                     BadgedBox(
                                         badge = {
                                             Badge(
-                                                containerColor = MaterialTheme.colorScheme.primary,
+                                                containerColor = DangerRed,
                                                 contentColor = Color.White
                                             ) {
                                                 Text(
@@ -497,18 +524,26 @@ fun MainApp(viewModel: MainViewModel) {
                                         Icon(
                                             imageVector = screen.icon,
                                             contentDescription = screen.title,
-                                            modifier = Modifier.size(24.dp)
+                                            modifier = Modifier.size(22.dp)
                                         )
                                     }
                                 } else {
                                     Icon(
                                         imageVector = screen.icon,
                                         contentDescription = screen.title,
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
                             },
-                            alwaysShowLabel = false,
+                            label = {
+                                Text(
+                                    text = screen.title,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            },
+                            alwaysShowLabel = true,
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
