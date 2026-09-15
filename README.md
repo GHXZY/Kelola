@@ -72,82 +72,68 @@ Banyak mahasiswa memulai usaha di lingkungan kampus—mulai dari berjualan makan
 
 ## 💾 Sistem Penyimpanan Data (Arsitektur Local-First)
 
-Kelola mengadopsi prinsip **100% Local-First**, di mana seluruh kendali dan kedaulatan data berada sepenuhnya di tangan pengguna:
+Kelola mengadopsi prinsip **100% Local-First**, di mana penyimpanan internal perangkat ponsel bertindak sebagai sumber kebenaran tunggal (*Single Source of Truth*). Seluruh data bisnis mahasiswa disimpan, diproses, dan diisolasi secara privat di dalam perangkat tanpa ketergantungan pada server cloud atau jaringan internet.
+
+### 🗺️ Peta Konsep Aliran Data Local-First
 
 ```mermaid
-flowchart TB
-    %% Nodes Mahasiswa / User Layer
-    subgraph UserLayer ["👤 PENGGUNA (MAHASISWA WIRAUSAHA)"]
+flowchart TD
+    %% Lapisan 1: Aksi Pengguna
+    UI["📱 <b>Antarmuka Pengguna (Jetpack Compose)</b><br/>Input Transaksi • Catat Kasbon • Atur Stok • Arus Kas"]
+
+    %% Lapisan 2: State & ViewModel
+    VM["⚙️ <b>Manajemen State (MainViewModel)</b><br/>Memproses logika bisnis via Kotlin Coroutines (Dispatchers.IO)"]
+
+    %% Lapisan 3: Abstraksi Data (Room)
+    ROOM["🗄️ <b>Abstraksi Data (Android Jetpack Room)</b><br/>DAOs: ProductDao • TransactionDao • DebtDao • CashFlowDao"]
+
+    %% Lapisan 4: SQLite Internal
+    SQLITE[("💾 <b>SQLite Database Engine (Local Storage)</b><br/><i>kelola_database.db</i> di dalam Private Sandbox HP")]
+
+    %% Lapisan 5: Pilar Karakteristik Local-First
+    subgraph Pillars ["🛡️ 4 Karakteristik Utama Sistem Local-First"]
         direction LR
-        U1["🛒 Transaksi Kasir"]
-        U2["🤝 Catat Kasbon Teman"]
-        U3["🪙 Titip Kembalian"]
-        U4["📦 Atur Stok & QRIS"]
+        P1["⚡ <b>0ms Latency</b><br/>Baca/tulis instan tanpa loading spinner"]
+        P2["📶 <b>100% Offline</b><br/>Berfungsi penuh tanpa koneksi internet"]
+        P3["🔒 <b>Privasi Mutlak</b><br/>Data omset & pelanggan aman di HP"]
+        P4["💾 <b>Backup Mandiri</b><br/>Ekspor / impor berkas DB & JSON"]
     end
 
-    %% Presentation Layer
-    subgraph PresentationLayer ["🖥️ PRESENTATION LAYER (Jetpack Compose & Material 3)"]
-        direction TB
-        UI_Nav["🧭 AppNavigation & Scaffold Router"]
-        subgraph Screens ["Layar Aplikasi (Oceanic Design System)"]
-            S1["KasirScreen<br/><small>Keranjang & Diskon</small>"]
-            S2["KasbonScreen<br/><small>Pelacak Piutang Teman</small>"]
-            S3["KembalianScreen<br/><small>Antrean Uang Kembalian</small>"]
-            S4["KatalogScreen<br/><small>Stok & Smart Crop QRIS</small>"]
-            S5["LaporanScreen<br/><small>Laba Rugi & Arus Kas</small>"]
-        end
-        UI_Nav --> Screens
-    end
+    %% Relasi Aliran Data
+    UI -->|"1. Kirim Aksi / Event Pengguna"| VM
+    VM -->|"2. Eksekusi Kueri di Background Thread"| ROOM
+    ROOM -->|"3. Operasi CRUD Langsung ke Disk"| SQLITE
+    SQLITE -->|"4. StateFlow / Flow Reaktif Kembali ke UI"| UI
+    SQLITE -.->|"Menjamin Kapabilitas"| Pillars
 
-    %% State & Business Logic Layer
-    subgraph LogicLayer ["⚙️ STATE & BUSINESS LOGIC (MVVM)"]
-        VM["🎮 MainViewModel<br/><b>StateFlow (UI State)</b>"]
-        UC["🧩 Business Logic / Use Cases<br/><i>Kalkulasi Laba • Validasi Stok • Manajemen Diskon</i>"]
-        VM --- UC
-    end
+    %% Styling
+    classDef mainNode fill:#F0F7FF,stroke:#0284C7,stroke-width:2px,color:#0C4A6E;
+    classDef dbNode fill:#ECFDF5,stroke:#059669,stroke-width:2px,color:#064E3B;
+    classDef pillarNode fill:#FFFBEB,stroke:#D97706,stroke-width:1.5px,color:#78350F;
 
-    %% Persistence Layer
-    subgraph DataLayer ["🗄️ PERSISTENCE LAYER (Android Jetpack Room)"]
-        direction TB
-        DAOs["Data Access Objects (DAOs)<br/><i>TransactionDao • ProductDao • DebtDao • CashFlowDao</i>"]
-        DB["⚡ Room Database Engine<br/><i>TypeConverters • Reactive Queries • Migrations</i>"]
-        DAOs --> DB
-    end
-
-    %% Local Storage Layer
-    subgraph StorageLayer ["💾 LOCAL STORAGE (100% Local-First & Zero Latency)"]
-        direction LR
-        SQLITE[("💽 SQLite Engine<br/>kelola_database.db")]
-        SANDBOX["📁 Private App Sandbox<br/>/data/data/com.aistudio.kelola/"]
-        BACKUP["📤 Local Backup & Restore<br/>Ekspor / Impor JSON & DB"]
-    end
-
-    %% Flow Relationships
-    UserLayer ==> UI_Nav
-    Screens <==>|"StateFlow & Event Triggers"| VM
-    UC <==>|"Coroutines Flow (Dispatchers.IO)"| DAOs
-    DB ==> SQLITE
-    DB ==> SANDBOX
-    SQLITE -.->|"Cadangkan Data"| BACKUP
-
-    %% Node Styling
-    classDef user fill:#EFF6FF,stroke:#3B82F6,stroke-width:2px,color:#1E3A8A;
-    classDef ui fill:#F0FDF4,stroke:#22C55E,stroke-width:2px,color:#14532D;
-    classDef logic fill:#FAF5FF,stroke:#A855F7,stroke-width:2px,color:#581C87;
-    classDef data fill:#FFF7ED,stroke:#F97316,stroke-width:2px,color:#7C2D12;
-    classDef storage fill:#F8FAFC,stroke:#64748B,stroke-width:2px,color:#0F172A;
-
-    class U1,U2,U3,U4 user;
-    class UI_Nav,S1,S2,S3,S4,S5 ui;
-    class VM,UC logic;
-    class DAOs,DB data;
-    class SQLITE,SANDBOX,BACKUP storage;
+    class UI,VM,ROOM mainNode;
+    class SQLITE dbNode;
+    class P1,P2,P3,P4 pillarNode;
 ```
 
-### 🌟 Mengapa Pendekatan Ini Terbaik untuk Mahasiswa?
+<br />
+
+### 🧱 Komponen Penyimpanan Data
+
+| Komponen | Teknologi | Lokasi / Berkas | Fungsi Utama |
+| :--- | :--- | :--- | :--- |
+| **Penyimpanan Primer** | SQLite Database Engine | Memori Internal HP (`kelola_database.db`) | Menyimpan seluruh tabel relasional transaksi, kasbon, katalog, dan arus kas secara lokal. |
+| **Object Relational Mapping (ORM)** | Android Jetpack Room | `KelolaDatabase` & Data Access Objects (DAOs) | Menyediakan abstraksi kueri SQL dengan validasi sintaks saat kompilasi (*compile-time check*). |
+| **Jalur Reaktif & Latar Belakang** | Kotlin Coroutines & Flow | `Dispatchers.IO` & `StateFlow` | Menjamin operasi baca/tulis data berat tidak menghambat antarmuka visual (*zero UI lag/freezing*). |
+| **Isolasi Keamanan Data** | Android App Sandbox | `/data/data/com.aistudio.kelola/` | Mengamankan data agar hanya dapat diakses oleh aplikasi Kelola dan terlindungi dari pihak luar. |
+| **Portabilitas Data** | File I/O Engine | Internal Storage / Documents | Memungkinkan pencadangan (*backup*) dan pemulihan (*restore*) basis data kapan saja saat berganti ponsel. |
+
+<br />
+
+### 🌟 Mengapa Pendekatan Local-First Terbaik untuk Mahasiswa?
 
 1. **🔒 Zero Data Leakage / 100% Privat**: Data omset, keuntungan, dan daftar pelanggan tidak pernah dikirim ke server luar atau pihak ketiga.
-2. **💰 Tanpa Biaya Server & Bebas Selamanya**: Tidak membutuhkan biaya langganan API, hosting, atau kuota internet saat berjualan.
+2. **💰 Tanpa Biaya Server & Bebas Selamanya**: Tidak memerlukan biaya langganan database cloud, sewa server bulanan, ataupun kuota internet saat berjualan.
 3. **⚡ Kecepatan Instan (0ms Latency)**: Seluruh operasi baca dan tulis terjadi langsung pada penyimpanan internal perangkat tanpa waktu tunggu (*loading spinner*).
 4. **💾 Cadangkan & Pulihkan (Backup & Restore)**: Pengguna dapat mengekspor seluruh basis data ke format berkas lokal untuk dipindahkan ke smartphone baru kapan saja.
 
