@@ -12,7 +12,13 @@
   [![Room Database](https://img.shields.io/badge/Database-Room_Local--First-FF6F00?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
   [![Architecture](https://img.shields.io/badge/Architecture-MVVM_Reactive-004974?style=for-the-badge&logo=google&logoColor=white)](#-sistem-penyimpanan-data-arsitektur-local-first)
 
-  <br />
+  <br /><br />
+
+  <a href="https://github.com/GHXZY/Kelola/releases/download/Kelola-Android-App/Kelola-release.apk">
+    <img src="https://img.shields.io/badge/Download%20APK-Kelola--release.apk-238636?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" height="42" />
+  </a>
+
+  <br /><br />
 
   <p align="center">
     <a href="#-tentang-kelola">Tentang Kelola</a> •
@@ -152,7 +158,7 @@ Kelola mengadopsi prinsip **100% Local-First**, di mana seluruh data bisnis maha
 
 Anda dapat langsung memasang aplikasi di ponsel Android Anda menggunakan berkas release yang telah disediakan:
 
-1. Unduh berkas **[`Kelola-release.apk`](Kelola-release.apk)** yang ada di repositori ini.
+1. Unduh berkas **[`Kelola-release.apk`](https://github.com/GHXZY/Kelola/releases/download/Kelola-Android-App/Kelola-release.apk)** via GitHub Releases.
 2. Kirim berkas APK ke ponsel Android Anda (via WhatsApp, Telegram, Google Drive, atau kabel data USB).
 3. Buka File Manager di ponsel dan ketuk berkas `Kelola-release.apk`.
 4. Jika muncul peringatan keamanan, aktifkan opsi **"Izinkan penginstalan dari sumber ini"**.
@@ -175,7 +181,7 @@ Bagi pengembang yang ingin memodifikasi atau berkontribusi pada kode sumber:
 #### 2. Langkah Kompilasi
 ```bash
 # 1. Clone repositori ini
-git clone https://github.com/username/Kelola.git
+git clone https://github.com/GHXZY/Kelola.git
 cd Kelola
 
 # 2. Kompilasi & jalankan aplikasi dalam mode debug
