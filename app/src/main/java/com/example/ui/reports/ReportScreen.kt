@@ -1,0 +1,982 @@
+package com.example.ui.reports
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PointOfSale
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.data.local.entity.ExpenseEntity
+import com.example.data.local.entity.IncomeEntity
+import com.example.data.local.entity.TransactionEntity
+import com.example.ui.ReportStats
+import com.example.ui.components.ConfirmationDialog
+import com.example.ui.components.EmptyState
+import com.example.ui.components.SearchField
+import com.example.ui.components.SummaryCard
+import com.example.ui.theme.BorderLight
+import com.example.ui.theme.BrandDeep
+import com.example.ui.theme.DangerContainer
+import com.example.ui.theme.DangerRed
+import com.example.ui.theme.GradientBrand
+import com.example.ui.theme.KelolaRadius
+import com.example.ui.theme.KelolaSpacing
+import com.example.ui.theme.KelolaTheme
+import com.example.ui.theme.PrimaryBlue
+import com.example.ui.theme.PrimaryBlueContainer
+import com.example.ui.theme.SecondaryTeal
+import com.example.ui.theme.SuccessContainer
+import com.example.ui.theme.SuccessGreen
+import com.example.ui.theme.TextMuted
+import com.example.ui.theme.TextPrimary
+import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.kelolaSoftShadow
+import com.example.util.FormatUtils
+
+data class CashflowItem(
+    val id: Long,
+    val isIncome: Boolean,
+    val title: String,
+    val subtitle: String,
+    val amount: Long,
+    val date: Long,
+    val rawExpense: ExpenseEntity? = null,
+    val rawTx: TransactionEntity? = null
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReportScreen(
+    reportStats: ReportStats,
+    selectedPeriod: String,
+    onSelectPeriod: (String) -> Unit,
+    transactions: List<TransactionEntity>,
+    expenses: List<ExpenseEntity>,
+    incomes: List<IncomeEntity>,
+    openingCapital: Long = 0L,
+    previousSales: Long = 0L,
+    previousSalesDate: String = "",
+    previousSalesNote: String = "",
+    onSelectTransaction: (TransactionEntity) -> Unit,
+    onOpenAddExpense: () -> Unit,
+    onDeleteExpense: (Long) -> Unit,
+    onEditExpense: (ExpenseEntity) -> Unit = {},
+    onDeleteTransaction: (Long) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val periods = listOf("Hari Ini", "7 Hari Terakhir", "Bulan Ini", "Semua")
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabTitles = listOf("Ringkasan", "Riwayat", "Arus Kas", "Kerugian")
+
+    var transactionSearch by remember { mutableStateOf("") }
+    var menuExpandedItemId by remember { mutableStateOf<Long?>(null) }
+    var itemToDelete by remember { mutableStateOf<CashflowItem?>(null) }
+
+    val filteredTransactions = remember(transactions, transactionSearch) {
+        if (transactionSearch.isBlank()) transactions
+        else transactions.filter {
+            it.transactionNumber.contains(transactionSearch, ignoreCase = true) ||
+                    it.paymentMethod.contains(transactionSearch, ignoreCase = true)
+        }
+    }
+
+    val cashflowTimeline = remember(expenses, incomes, transactions) {
+        val incList = transactions.filter { it.status == "COMPLETED" }.map {
+            CashflowItem(
+                id = it.id,
+                isIncome = true,
+                title = "Penjualan Kasir",
+                subtitle = "${it.transactionNumber} (${it.paymentMethod})",
+                amount = it.total,
+                date = it.createdAt,
+                rawTx = it
+            )
+        } + incomes.filter { it.source != "Penjualan" }.map {
+            CashflowItem(
+                id = it.id,
+                isIncome = true,
+                title = it.source,
+                subtitle = it.note ?: "Pemasukan lain",
+                amount = it.amount,
+                date = it.date
+            )
+        }
+        val expList = expenses.map {
+            CashflowItem(
+                id = it.id,
+                isIncome = false,
+                title = it.category,
+                subtitle = it.note.ifBlank { "Pengeluaran operasional" },
+                amount = it.amount,
+                date = it.date,
+                rawExpense = it
+            )
+        }
+        (incList + expList).sortedByDescending { it.date }
+    }
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(bottom = 80.dp)
+    ) {
+        item {
+            Spacer(modifier = Modifier.height(4.dp))
+            // Period Filter Chips (Radius 10px, Tanpa Border)
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(periods) { period ->
+                    val isSelected = period == selectedPeriod
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onSelectPeriod(period) },
+                        shape = KelolaRadius.ShapeSmall,
+                        label = {
+                            Text(
+                                text = period,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else BorderLight)
+                    )
+                }
+            }
+        }
+
+        // Key Metric Summary Cards
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SummaryCard(
+                        title = "Penjualan",
+                        value = FormatUtils.formatRupiah(reportStats.totalSales),
+                        subtitle = "${reportStats.transactionCount} transaksi",
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    SummaryCard(
+                        title = "Keuntungan (Kotor)",
+                        value = FormatUtils.formatRupiah(reportStats.grossProfit),
+                        subtitle = "${reportStats.itemsSold} item terjual",
+                        icon = Icons.Default.MonetizationOn,
+                        contentColor = SuccessGreen,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SummaryCard(
+                        title = "Pengeluaran",
+                        value = FormatUtils.formatRupiah(reportStats.totalExpense),
+                        subtitle = "Beban usaha",
+                        icon = Icons.Default.TrendingDown,
+                        contentColor = DangerRed,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    SummaryCard(
+                        title = "Arus Kas Bersih",
+                        value = FormatUtils.formatRupiah(reportStats.netCashflow),
+                        subtitle = "Pemasukan - beban",
+                        icon = Icons.Default.Receipt,
+                        contentColor = SecondaryTeal,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        // Subtabs: Ringkasan & Tren, Transaksi, Arus Kas
+        item {
+            PrimaryTabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = Color.Transparent,
+                divider = {}
+            ) {
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = {
+                            Text(
+                                text = title,
+                                fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Medium,
+                                color = if (selectedTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        // TAB 0: Ringkasan & Tren + Produk Terlaris
+        if (selectedTab == 0) {
+            // Data Keuangan Awal & Historis Card (Kelola Radius Card 20px, Tanpa Border)
+            if (previousSales > 0L || openingCapital > 0L) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                        shape = KelolaRadius.ShapeCard,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                text = "DATA KEUANGAN AWAL & HISTORIS",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                letterSpacing = 0.8.sp
+                            )
+
+                            // Penjualan Aplikasi
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Penjualan Aplikasi",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${reportStats.transactionCount} transaksi dicatat via POS",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(
+                                    text = FormatUtils.formatRupiah(reportStats.totalSales),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            // Penjualan Sebelumnya
+                            if (previousSales > 0L) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "Penjualan Sebelumnya",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = if (previousSalesNote.isNotBlank()) previousSalesNote else "Pencatatan manual sebelum aplikasi",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Text(
+                                        text = FormatUtils.formatRupiah(previousSales),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SuccessGreen
+                                    )
+                                }
+
+                                // Total Historis
+                                Surface(
+                                    shape = KelolaRadius.ShapeInput,
+                                    color = MaterialTheme.colorScheme.surface,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Total Historis Gabungan",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = FormatUtils.formatRupiah(reportStats.totalSales + previousSales),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Modal Awal
+                            if (openingCapital > 0L) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "Modal Awal Usaha",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "Saldo modal awal (bukan penjualan)",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Text(
+                                        text = FormatUtils.formatRupiah(openingCapital),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SecondaryTeal
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Daily Sales Visualizer Bar Chart (Kelola Radius Card 20px, Soft Shadow, Tanpa Border)
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 3.dp),
+                    shape = KelolaRadius.ShapeCard,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Grafik Penjualan",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Icon(
+                                Icons.Default.BarChart,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        val maxAmount = reportStats.dailySales.maxOfOrNull { it.amount }?.coerceAtLeast(1L) ?: 1L
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(130.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            reportStats.dailySales.forEach { dayStat ->
+                                val heightRatio = (dayStat.amount.toFloat() / maxAmount.toFloat()).coerceIn(0.08f, 1f)
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (dayStat.amount > 0) {
+                                        Text(
+                                            text = if (dayStat.amount >= 1000) "${dayStat.amount / 1000}k" else "${dayStat.amount}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .width(22.dp)
+                                            .fillMaxSize(heightRatio)
+                                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                                            .background(
+                                                if (dayStat.amount > 0) GradientBrand
+                                                else androidx.compose.ui.graphics.Brush.linearGradient(
+                                                    listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
+                                                )
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = dayStat.dayLabel,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Top Products Section
+            item {
+                Text(
+                    text = "Produk Terlaris",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            if (reportStats.topProducts.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Default.PointOfSale,
+                        title = "Belum Ada Data Penjualan",
+                        description = "Data produk terlaris akan otomatis terakumulasi setelah transaksi dilakukan."
+                    )
+                }
+            } else {
+                items(reportStats.topProducts.mapIndexed { idx, p -> Pair(idx + 1, p) }) { (rank, prod) ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                        shape = KelolaRadius.ShapeCard,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(if (rank <= 3) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "$rank",
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (rank <= 3) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = prod.name,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${prod.quantitySold} terjual",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = FormatUtils.formatRupiah(prod.totalRevenue),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // TAB 1: Riwayat Transaksi
+        if (selectedTab == 1) {
+            item {
+                SearchField(
+                    query = transactionSearch,
+                    onQueryChange = { transactionSearch = it },
+                    placeholder = "Cari nomor transaksi atau metode...",
+                    testTag = "input_search_history"
+                )
+            }
+
+            if (filteredTransactions.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Default.Receipt,
+                        title = "Tidak Ada Transaksi",
+                        description = "Belum ada transaksi yang sesuai pada periode ini."
+                    )
+                }
+            } else {
+                items(filteredTransactions, key = { it.id }) { tx ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectTransaction(tx) }
+                            .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                        shape = KelolaRadius.ShapeCard,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = tx.transactionNumber,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        shape = KelolaRadius.ShapeSmall,
+                                        color = if (tx.status == "COMPLETED") SuccessContainer else DangerContainer
+                                    ) {
+                                        Text(
+                                            text = if (tx.status == "COMPLETED") "Selesai" else "Batal",
+                                            color = if (tx.status == "COMPLETED") SuccessGreen else DangerRed,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "${FormatUtils.formatDateTime(tx.createdAt)} • ${tx.paymentMethod}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = FormatUtils.formatRupiah(tx.total),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (tx.status == "COMPLETED") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Lihat detail →",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // TAB 2: Buku Kas / Arus Kas
+        if (selectedTab == 2) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Mutasi Arus Kas",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            if (cashflowTimeline.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Default.Receipt,
+                        title = "Belum Ada Catatan Arus Kas",
+                        description = "Arus kas akan mencatat pemasukan dari kasir dan pengeluaran operasional harian."
+                    )
+                }
+            } else {
+                items(cashflowTimeline) { item ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                        shape = KelolaRadius.ShapeCard,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f, fill = false)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(KelolaSpacing.IconContainerSize)
+                                        .clip(CircleShape)
+                                        .background(if (item.isIncome) SuccessContainer else DangerContainer),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (item.isIncome) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        tint = if (item.isIncome) SuccessGreen else DangerRed,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = item.title,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = item.subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = FormatUtils.formatDateTime(item.date),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (item.isIncome) "+${FormatUtils.formatRupiah(item.amount)}" else "-${FormatUtils.formatRupiah(item.amount)}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (item.isIncome) SuccessGreen else DangerRed
+                                )
+
+                                Spacer(modifier = Modifier.width(4.dp))
+
+                                Box {
+                                    IconButton(
+                                        onClick = {
+                                            menuExpandedItemId = if (menuExpandedItemId == item.id) null else item.id
+                                        },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.MoreVert,
+                                            contentDescription = "Opsi Data",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+
+                                    DropdownMenu(
+                                        expanded = menuExpandedItemId == item.id,
+                                        onDismissRequest = { menuExpandedItemId = null }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Edit Data", fontSize = 13.sp) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Default.Edit,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            },
+                                            onClick = {
+                                                menuExpandedItemId = null
+                                                if (item.rawExpense != null) {
+                                                    onEditExpense(item.rawExpense)
+                                                } else if (item.rawTx != null) {
+                                                    onSelectTransaction(item.rawTx)
+                                                }
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Hapus Data", fontSize = 13.sp, color = DangerRed) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = null,
+                                                    tint = DangerRed,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            },
+                                            onClick = {
+                                                menuExpandedItemId = null
+                                                itemToDelete = item
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // TAB 3: Laporan Kerugian (Barang Kadaluarsa & Rusak)
+        if (selectedTab == 3) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                    shape = KelolaRadius.ShapeCard,
+                    colors = CardDefaults.cardColors(containerColor = DangerContainer),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(DangerRed.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = DangerRed,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Total Kerugian Tercatat",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = DangerRed,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = FormatUtils.formatRupiah(reportStats.totalLoss),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = DangerRed
+                            )
+                            Text(
+                                text = "${reportStats.lossRecords.size} kejadian barang kadaluarsa / rusak",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (reportStats.lossRecords.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Default.CheckCircle,
+                        title = "Belum Ada Catatan Kerugian",
+                        description = "Semua stok barang aman dan belum ada kerugian tercatat.",
+                        modifier = Modifier.padding(vertical = 24.dp)
+                    )
+                }
+            } else {
+                items(reportStats.lossRecords, key = { it.id }) { record ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                        shape = KelolaRadius.ShapeCard,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = record.productName,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Surface(
+                                        shape = KelolaRadius.ShapeSmall,
+                                        color = DangerContainer
+                                    ) {
+                                        Text(
+                                            text = record.reason,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = DangerRed,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "Jumlah: ${record.quantity} pcs • HPP: ${FormatUtils.formatRupiah(record.costPrice)}/pcs",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = FormatUtils.formatDateTime(record.date),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Text(
+                                text = "-${FormatUtils.formatRupiah(record.totalLoss)}",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = DangerRed
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    itemToDelete?.let { item ->
+        val isExp = item.rawExpense != null
+        ConfirmationDialog(
+            title = if (isExp) "Hapus Pengeluaran?" else "Hapus Transaksi Kasir?",
+            message = "Yakin ingin menghapus ${item.title} sebesar ${FormatUtils.formatRupiah(item.amount)} dari catatan arus kas?",
+            confirmText = "Hapus Data",
+            isDestructive = true,
+            onConfirm = {
+                if (isExp) {
+                    onDeleteExpense(item.id)
+                } else {
+                    onDeleteTransaction(item.id)
+                }
+                itemToDelete = null
+            },
+            onDismiss = {
+                itemToDelete = null
+            }
+        )
+    }
+}

@@ -1,0 +1,631 @@
+Berikut **panduan utama ukuran layout aplikasi Android mobile** yang bisa dijadikan baseline saat mendesain di Figma maupun implementasi UI. Angka ini bukan aturan absolut, tetapi **design baseline** yang aman dan umum digunakan.
+
+## 1. Ukuran Frame / Screen
+
+Untuk desain mobile Android:
+
+| Elemen                                   |       Ukuran yang disarankan |
+| ---------------------------------------- | ---------------------------: |
+| Frame utama                              |             **360 × 800 dp** |
+| Frame modern                             | **360 × 800 / 390 × 844 dp** |
+| Lebar minimum yang perlu dipertimbangkan |                   **320 dp** |
+| Horizontal screen padding                |                 **16–24 dp** |
+| Content width maksimum                   |       Sesuaikan dengan layar |
+
+**Rekomendasi:** gunakan **360 dp** sebagai baseline utama, kemudian pastikan layout tetap responsif pada 320–430 dp.
+
+---
+
+# 2. Spacing System
+
+Gunakan sistem spacing berbasis kelipatan **4 dp**.
+
+|   Spacing | Penggunaan                  |
+| --------: | --------------------------- |
+|  **4 dp** | Jarak sangat kecil          |
+|  **8 dp** | Icon ↔ text, elemen terkait |
+| **12 dp** | Jarak antar elemen kecil    |
+| **16 dp** | Default spacing             |
+| **20 dp** | Pemisah antar kelompok      |
+| **24 dp** | Antar section               |
+| **32 dp** | Section besar               |
+| **40 dp** | Separation besar            |
+| **48 dp** | Area transisi/major spacing |
+
+### Rule sederhana
+
+**4 → detail**
+**8 → komponen**
+**16 → content**
+**24 → section**
+**32 → major section**
+
+Untuk aplikasi keuangan, **16 dp dan 24 dp** biasanya menjadi spacing paling sering digunakan.
+
+---
+
+# 3. Screen Padding
+
+Gunakan:
+
+**Default: 16 dp**
+
+Contoh:
+
+```text
+|← 16dp →| CONTENT |← 16dp →|
+```
+
+Untuk halaman yang membutuhkan ruang lebih lega:
+
+**20–24 dp**
+
+Hindari:
+
+* 8 dp untuk seluruh screen → terlalu sempit.
+* 32 dp untuk seluruh screen → terlalu banyak ruang terbuang pada smartphone kecil.
+
+---
+
+# 4. Touch Target
+
+Ini salah satu ukuran paling penting.
+
+### Minimum
+
+**48 × 48 dp**
+
+Contoh icon:
+
+```text
+┌────────────────┐
+│                │
+│      ICON      │  48dp
+│                │
+└────────────────┘
+       48dp
+```
+
+Icon visualnya boleh hanya **20–24 dp**, tetapi area yang bisa disentuh sebaiknya sekitar **48 dp**.
+
+### Rule
+
+| Elemen          |        Touch target |
+| --------------- | ------------------: |
+| Icon button     |      **48 × 48 dp** |
+| Checkbox        | **48 × 48 dp area** |
+| Radio           | **48 × 48 dp area** |
+| Navigation item |          **≥48 dp** |
+| Button          |   **≥48 dp tinggi** |
+| List item       |   **≥48 dp tinggi** |
+
+Untuk action yang sangat penting, area sentuh bisa dibuat lebih besar.
+
+---
+
+# 5. Button
+
+Baseline yang aman:
+
+### Standard Button
+
+**Height: 48 dp**
+
+```text
+┌──────────────────────────────┐
+│                              │
+│          CONTINUE            │ 48dp
+│                              │
+└──────────────────────────────┘
+```
+
+Horizontal padding:
+
+**16–24 dp**
+
+Text:
+
+**14–16 sp**
+
+Font weight:
+
+**Medium / SemiBold**
+
+### Button yang lebih prominent
+
+**52–56 dp**
+
+Cocok untuk primary CTA yang memang sudah ada.
+
+Namun jangan membuat semua button 56 dp karena akan membuat interface terlalu berat.
+
+---
+
+# 6. Input Field
+
+Rekomendasi:
+
+**48–56 dp height**
+
+Untuk aplikasi keuangan saya cenderung memilih:
+
+**52–56 dp**
+
+karena input angka membutuhkan area sentuh yang nyaman.
+
+Contoh:
+
+```text
+Label
+↓
+┌──────────────────────────────┐
+│  Rp 1.500.000                │ 52–56dp
+└──────────────────────────────┘
+```
+
+Spacing:
+
+* Label → input: **6–8 dp**
+* Input → input berikutnya: **16 dp**
+* Group → group: **24 dp**
+
+---
+
+# 7. Icon
+
+Ukuran visual icon:
+
+| Penggunaan      |       Ukuran |
+| --------------- | -----------: |
+| Small           |    **16 dp** |
+| Standard        | **20–24 dp** |
+| Navigation      |    **24 dp** |
+| Large           | **28–32 dp** |
+| Hero/icon utama | **40–48 dp** |
+
+Untuk kebanyakan aplikasi:
+
+**24 dp adalah default yang sangat aman.**
+
+Tetapi:
+
+> **24 dp icon ≠ 24 dp touch target.**
+
+Icon 24 dp sebaiknya berada di dalam area sentuh ±48 dp.
+
+---
+
+# 8. Typography
+
+Gunakan `sp`, bukan `dp`, untuk font.
+
+Baseline yang praktis:
+
+| Typography           |         Size |
+| -------------------- | -----------: |
+| Display / angka hero | **28–36 sp** |
+| H1                   | **24–28 sp** |
+| H2                   | **20–24 sp** |
+| H3                   | **18–20 sp** |
+| Body Large           |    **16 sp** |
+| Body                 | **14–16 sp** |
+| Supporting text      | **12–14 sp** |
+| Caption              | **11–12 sp** |
+
+### Untuk aplikasi keuangan
+
+Angka utama bisa:
+
+**28–32 sp**
+
+Contoh:
+
+```text
+Total Saldo
+
+Rp 12.450.000
+^^^^^^^^^^^^^^
+    32sp
+```
+
+Sedangkan label:
+
+```text
+Total Saldo
+^^^^^^^^^^^
+   14sp
+```
+
+Jangan membuat label lebih besar daripada angka yang menjadi fokus.
+
+---
+
+# 9. Line Height
+
+Jangan hanya memperhatikan font size.
+
+Baseline:
+
+| Text  | Line height |
+| ----- | ----------: |
+| 12 sp |    16–18 dp |
+| 14 sp |       20 dp |
+| 16 sp |       24 dp |
+| 18 sp |    24–28 dp |
+| 20 sp |       28 dp |
+| 24 sp |       32 dp |
+| 28 sp |       36 dp |
+| 32 sp |       40 dp |
+
+Untuk paragraph panjang, gunakan line height sekitar:
+
+**1.4–1.6× font size**
+
+---
+
+# 10. Card
+
+Untuk aplikasi finansial, card jangan terlalu besar.
+
+### Padding
+
+**16 dp** adalah baseline.
+
+```text
+┌──────────────────────────────┐
+│ ← 16dp                       │
+│                              │
+│     Content                  │
+│                              │
+│                       16dp → │
+└──────────────────────────────┘
+```
+
+### Radius
+
+Baseline:
+
+**12–16 dp**
+
+Contoh:
+
+* 8 dp → lebih formal
+* 12 dp → modern
+* 16 dp → friendly/premium
+* 20–24 dp → sangat rounded
+
+Untuk aplikasi keuangan modern:
+
+**12–16 dp** biasanya paling aman.
+
+---
+
+# 11. List Item
+
+Untuk list transaksi:
+
+**48–64 dp minimum**, tergantung kompleksitas.
+
+Jika hanya:
+
+```text
+Icon   Makan             -Rp25.000
+       Hari ini
+```
+
+sekitar:
+
+**64–72 dp**
+
+Jika hanya satu baris:
+
+**48–56 dp**
+
+---
+
+# 12. Avatar / Icon Container
+
+| Elemen          |   Ukuran |
+| --------------- | -------: |
+| Small avatar    |    32 dp |
+| Standard avatar |    40 dp |
+| Large avatar    |    48 dp |
+| Icon container  | 40–48 dp |
+
+Untuk transaction category icon:
+
+**40 dp container + 20–24 dp icon**
+
+biasanya sangat nyaman.
+
+---
+
+# 13. Chip / Badge
+
+Untuk komponen yang SUDAH ADA:
+
+Height:
+
+**32–36 dp**
+
+Horizontal padding:
+
+**12 dp**
+
+Text:
+
+**12–14 sp**
+
+Jangan membuat chip terlalu kecil sehingga sulit disentuh jika chip tersebut interactive.
+
+---
+
+# 14. Header / Top App Bar
+
+Baseline:
+
+**56 dp**
+
+Contoh:
+
+```text
+┌──────────────────────────────┐
+│  ←   Title              ⋮    │
+│                              │ 56dp
+└──────────────────────────────┘
+```
+
+Jika ada status bar, **jangan menghitung status bar sebagai bagian dari content height**.
+
+---
+
+# 15. Bottom Navigation
+
+Jika aplikasi memang **SUDAH memiliki bottom navigation**, baseline:
+
+**64–80 dp**, termasuk area yang diperlukan untuk gesture/navigation inset.
+
+Icon:
+
+**24 dp**
+
+Label:
+
+**11–12 sp**
+
+Touch area setiap item harus nyaman.
+
+Jangan memperkecil bottom navigation hanya untuk mendapatkan lebih banyak ruang content.
+
+---
+
+# 16. Section Spacing
+
+Struktur yang bagus:
+
+```text
+Header
+↓
+24dp
+
+Section Title
+↓
+12–16dp
+
+Content/Card
+↓
+24dp
+
+Section Title
+↓
+12–16dp
+
+Content/Card
+```
+
+Gunakan:
+
+**24 dp antar section**
+
+dan:
+
+**8–16 dp antar elemen dalam section.**
+
+Ini membuat interface terasa terstruktur tanpa terlihat kosong.
+
+---
+
+# 17. Alignment
+
+Gunakan alignment yang konsisten.
+
+Contoh:
+
+```text
+Total Saldo
+Rp 12.450.000
+
+Pendapatan
+Rp 8.500.000
+
+Pengeluaran
+Rp 3.250.000
+```
+
+Semua informasi penting sebaiknya memiliki **alignment yang konsisten**.
+
+Untuk angka finansial, pertimbangkan alignment yang memudahkan scanning.
+
+Jangan membuat:
+
+```text
+Rp 12.450.000
+       Rp 8.500.000
+  Rp 3.250.000
+```
+
+jika tidak ada alasan desain yang kuat.
+
+---
+
+# 18. Safe Area
+
+Jangan meletakkan elemen penting tepat di:
+
+* Status bar
+* Display cutout
+* Gesture area
+* Navigation bar
+
+Content harus memiliki inset yang aman.
+
+Terutama:
+
+**Bottom CTA / button**
+
+jangan terlalu dekat dengan gesture navigation area.
+
+---
+
+# 19. Thumb Zone
+
+Secara ergonomis, layar dapat dipandang sebagai:
+
+```text
+┌───────────────────┐
+│   HARD TO REACH   │
+│                   │
+│    MEDIUM AREA    │
+│                   │
+│   EASY / THUMB    │
+│      ZONE         │
+└───────────────────┘
+```
+
+Action yang sering digunakan sebaiknya tidak selalu berada di bagian paling atas.
+
+Tetapi **jangan memindahkan existing button secara ekstrem** hanya berdasarkan teori thumb zone. Pertahankan information architecture yang sudah ada dan optimalkan posisi/spacing-nya.
+
+---
+
+# 20. Jarak Antar Tombol
+
+Jika terdapat beberapa tombol yang memang sudah ada:
+
+**8–12 dp**
+
+Contoh:
+
+```text
+┌────────────────────────┐
+│        SIMPAN          │
+└────────────────────────┘
+          12dp
+┌────────────────────────┐
+│         BATAL           │
+└────────────────────────┘
+```
+
+Jangan:
+
+```text
+BUTTON
+BUTTON
+```
+
+karena terlalu mudah salah tekan.
+
+---
+
+# 21. Jarak Icon dan Text
+
+Baseline:
+
+**8 dp**
+
+Contoh:
+
+```text
+[ ICON ]  8dp  Text
+```
+
+Jika icon dan text merupakan satu unit, gunakan alignment tengah secara vertikal.
+
+---
+
+# 22. Jarak Label dan Value
+
+Untuk financial UI:
+
+```text
+Total Saldo
+↓
+8dp
+↓
+Rp 12.450.000
+```
+
+Biasanya **4–8 dp** sudah cukup.
+
+Jangan terlalu jauh karena label dan value harus terlihat sebagai satu informasi.
+
+---
+
+# 23. Prinsip Ukuran Paling Penting
+
+Jika ingin menyederhanakannya menjadi satu **cheat sheet**, gunakan ini:
+
+```text
+SCREEN
+├── Horizontal padding      16–24 dp
+│
+├── Header                  56 dp
+│
+├── Section spacing         24 dp
+│
+├── Component spacing       8–16 dp
+│
+├── Card padding            16 dp
+│
+├── Button height           48–56 dp
+│
+├── Input height            48–56 dp
+│
+├── Touch target            ≥48 dp
+│
+├── Standard icon           24 dp
+│
+├── Icon container          40–48 dp
+│
+├── Body text               14–16 sp
+│
+├── Section title           18–20 sp
+│
+├── Page title              24–28 sp
+│
+├── Financial hero number   28–36 sp
+│
+├── Card radius             12–16 dp
+│
+└── Bottom safe area        Respect system inset
+```
+
+### Kalau ingin satu aturan inti:
+
+**16 dp = default**
+
+**24 dp = section**
+
+**48 dp = touch**
+
+**56 dp = button/input/header**
+
+**24 dp = icon**
+
+**14–16 sp = body**
+
+**24–32 sp = heading/financial value**
+
+**12–16 dp = card radius**
+
+Ini sudah menjadi baseline yang sangat solid untuk mulai merapikan aplikasi Android mobile, khususnya aplikasi keuangan.

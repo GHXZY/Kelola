@@ -1,0 +1,30 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="683dp"
+    android:height="683dp"
+    android:viewportWidth="683"
+    android:viewportHeight="683">
+
+    <!-- Official Kelola Brand Emblem (White Monochrome) 683dp x 683dp -->
+    <!-- Two Vertical Financial Currency Strokes (Left & Right) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 339.45,167.34 L 351.75,167.34 L 351.75,515.66 L 339.45,515.66 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 367.45,167.34 L 379.75,167.34 L 379.75,515.66 L 367.45,515.66 Z" />
+
+    <!-- Left Vertical Stem (Solid pillar with sleek curved shoulder) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 293.69,490.39 L 224.02,490.39 L 224.02,286.86 C 224.02,249.30 249.30,208.31 293.69,199.44 Z" />
+
+    <!-- Upper Wing (Dynamic Ascending Swoosh) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 317.60,346.96 C 324.43,310.76 355.16,232.22 433.70,184.41 C 450.78,174.16 461.02,194.66 447.37,228.81 C 420.05,297.11 361.99,326.47 317.60,346.96 Z" />
+
+    <!-- Lower Wing (Dynamic Stabilizing Swoosh) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 317.60,346.96 C 324.43,382.48 355.16,461.02 433.70,508.83 C 450.78,519.08 461.02,498.59 447.37,464.44 C 420.05,396.14 361.99,367.45 317.60,346.96 Z" />
+</vector>

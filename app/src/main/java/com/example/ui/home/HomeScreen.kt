@@ -1,0 +1,786 @@
+package com.example.ui.home
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PointOfSale
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.data.local.entity.ChangeRecordEntity
+import com.example.data.local.entity.DebtEntity
+import com.example.data.local.entity.ProductEntity
+import com.example.data.local.entity.TransactionEntity
+import com.example.ui.DashboardStats
+import com.example.ui.components.StockBadge
+import com.example.ui.components.SummaryCard
+import com.example.ui.theme.BrandDeep
+import com.example.ui.theme.BrandSky
+import com.example.ui.theme.DangerContainer
+import com.example.ui.theme.DangerRed
+import com.example.ui.theme.GradientBrand
+import com.example.ui.theme.KelolaRadius
+import com.example.ui.theme.KelolaSpacing
+import com.example.ui.theme.KelolaTheme
+import com.example.ui.theme.PrimaryBlue
+import com.example.ui.theme.SuccessContainer
+import com.example.ui.theme.SuccessGreen
+import com.example.ui.theme.TextMuted
+import com.example.ui.theme.TextPrimary
+import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.WarningAmber
+import com.example.ui.theme.WarningContainer
+import com.example.ui.theme.kelolaSoftShadow
+import com.example.util.FormatUtils
+
+@Composable
+fun HomeScreen(
+    stats: DashboardStats,
+    businessName: String,
+    openingCapital: Long = 0L,
+    onNavigateToCashier: () -> Unit = {},
+    onNavigateToDebts: () -> Unit = {},
+    onNavigateToPendingChanges: () -> Unit = {},
+    onOpenAddProduct: () -> Unit = {},
+    onOpenAddExpense: () -> Unit = {},
+    onOpenRestock: (ProductEntity) -> Unit,
+    onSelectTransaction: (TransactionEntity) -> Unit,
+    onMarkChangeGiven: (Long) -> Unit = {},
+    onSettleDebt: (DebtEntity) -> Unit = {},
+    onEditDebtItems: (DebtEntity) -> Unit = {},
+    onOpenNotes: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val activeBalance = openingCapital + stats.todaySales - stats.todayExpense
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = KelolaSpacing.ScreenMargin),
+        verticalArrangement = Arrangement.spacedBy(KelolaSpacing.Space4)
+    ) {
+        // Spacing di atas Hero Saldo: 12dp untuk visual hierarchy yang pas di mobile
+        item {
+            Spacer(modifier = Modifier.height(KelolaSpacing.Space3))
+        }
+
+        // =========================================================================
+        // KELOLA HERO SALDO (Momen Visual Utama: Radius 16px, Gradient Brand, Tanpa Border)
+        // =========================================================================
+        item {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .kelolaSoftShadow(shape = KelolaRadius.ShapeHero, elevation = 4.dp)
+                    .testTag("hero_saldo_card"),
+                shape = KelolaRadius.ShapeHero,
+                color = Color.Transparent
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(GradientBrand)
+                        .padding(20.dp)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Business badge & status
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Saldo Aktif Toko",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White.copy(alpha = 0.85f),
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (openingCapital > 0L) {
+                                    Surface(
+                                        shape = KelolaRadius.ShapeSmall,
+                                        color = Color.White.copy(alpha = 0.18f)
+                                    ) {
+                                        Text(
+                                            text = "Modal: ${FormatUtils.formatRupiah(openingCapital)}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    shape = KelolaRadius.ShapeSmall,
+                                    color = Color.White.copy(alpha = 0.20f)
+                                ) {
+                                    Text(
+                                        text = businessName,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(KelolaSpacing.Space2))
+
+                        // Nominal Finansial Utama: 36sp Playfair Display / displayMedium sesuai Layout.txt
+                        Text(
+                            text = FormatUtils.formatRupiah(activeBalance),
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+
+        // space-5 (24px) setelah hero sesuai grid diagram
+        item {
+            Spacer(modifier = Modifier.height(KelolaSpacing.Space2))
+            Text(
+                text = "Ringkasan",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        // Summary Cards Grid (2x2) - Gap space-4 (16px) antar card sejenis
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(KelolaSpacing.Space4)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space4)
+                ) {
+                    SummaryCard(
+                        title = "Keuntungan",
+                        value = FormatUtils.formatRupiah(stats.todayProfit),
+                        subtitle = "${stats.todayItemsSold} item terjual",
+                        icon = Icons.Default.MonetizationOn,
+                        contentColor = KelolaTheme.positive,
+                        modifier = Modifier.weight(1f),
+                        testTag = "summary_profit"
+                    )
+
+                    SummaryCard(
+                        title = "Transaksi",
+                        value = "${stats.todayTxCount}",
+                        subtitle = "Hari ini",
+                        icon = Icons.Default.Receipt,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                        testTag = "summary_sales"
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space4)
+                ) {
+                    SummaryCard(
+                        title = "Pengeluaran",
+                        value = FormatUtils.formatRupiah(stats.todayExpense),
+                        subtitle = "Hari ini",
+                        icon = Icons.Default.TrendingDown,
+                        contentColor = KelolaTheme.negative,
+                        modifier = Modifier.weight(1f),
+                        testTag = "summary_expense"
+                    )
+
+                    SummaryCard(
+                        title = "Arus Kas Bersih",
+                        value = FormatUtils.formatRupiah(stats.todaySales - stats.todayExpense),
+                        subtitle = "Penjualan - Pengeluaran",
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                        testTag = "summary_net_cash"
+                    )
+                }
+            }
+        }
+
+        // ==========================================
+        // SECTION 1: RINGKASAN KEMBALIAN BELUM DIBERIKAN (Klik -> Laman Kembalian)
+        // ==========================================
+        item {
+            val hasPending = stats.pendingChangeList.isNotEmpty()
+            Card(
+                onClick = onNavigateToPendingChanges,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp)
+                    .testTag("card_pending_change_summary"),
+                shape = KelolaRadius.ShapeCard,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(if (hasPending) WarningContainer else SuccessContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MonetizationOn,
+                                contentDescription = null,
+                                tint = if (hasPending) WarningAmber else SuccessGreen,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Kembalian Belum Diberikan",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = FormatUtils.formatRupiah(stats.pendingChangeTotal),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (hasPending) KelolaTheme.negative else MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (hasPending) {
+                                    "${stats.pendingChangeList.size} Transaksi Tertunda"
+                                } else {
+                                    "Semua kembalian beres diberikan 👏"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Buka Kembalian",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // SECTION 2: RINGKASAN ORANG BELUM BAYAR / KASBON (Klik -> Laman Kasbon)
+        // ==========================================
+        item {
+            val hasDebts = stats.unpaidDebtCount > 0
+            Card(
+                onClick = onNavigateToDebts,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp)
+                    .testTag("card_unpaid_debts_summary"),
+                shape = KelolaRadius.ShapeCard,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(if (hasDebts) DangerContainer else SuccessContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = if (hasDebts) DangerRed else SuccessGreen,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Orang Belum Bayar (Kasbon)",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = FormatUtils.formatRupiah(stats.unpaidDebtTotal),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (hasDebts) KelolaTheme.negative else MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (hasDebts) {
+                                    "${stats.unpaidDebtCount} Orang Belum Lunas"
+                                } else {
+                                    "Semua kasbon lunas 👏"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Buka Kasbon",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // SECTION: CATATAN & RIWAYAT TOKO (Di bawah section Kasbon)
+        // ==========================================
+        item {
+            Surface(
+                onClick = onOpenNotes,
+                shape = KelolaRadius.ShapeMedium,
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .kelolaSoftShadow(KelolaRadius.ShapeMedium, 2.dp)
+                    .testTag("button_open_notes_home")
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.EditNote,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                text = "Catatan & Riwayat Toko",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Pengingat stok, catatan transaksi & aktivitas",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+
+        // Section: Produk Hampir Habis
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Produk Hampir Habis",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (stats.lowStockProducts.isNotEmpty()) {
+                    Surface(
+                        shape = KelolaRadius.ShapeSmall,
+                        color = WarningContainer
+                    ) {
+                        Text(
+                            text = "${stats.lowStockProducts.size} Perlu Restock",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = WarningAmber,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (stats.lowStockProducts.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                    shape = KelolaRadius.ShapeCard,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = SuccessGreen,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Semua stok masih aman 🎉",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Tidak ada produk yang berada di bawah batas minimum.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            items(stats.lowStockProducts) { product ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                    shape = KelolaRadius.ShapeCard,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(KelolaRadius.ShapeSmall)
+                                    .background(WarningContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = WarningAmber,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = product.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                StockBadge(
+                                    stock = product.stock,
+                                    minimumStock = product.minimumStock,
+                                    unit = product.unit
+                                )
+                            }
+                        }
+
+                        Surface(
+                            onClick = { onOpenRestock(product) },
+                            shape = KelolaRadius.ShapeSmall,
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .testTag("button_quick_restock_${product.id}")
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Tambah Stok",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section: Transaksi Terbaru (Judul rata kiri sejajar margin, gap space-5)
+        item {
+            Spacer(modifier = Modifier.height(KelolaSpacing.Space3))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Transaksi Terbaru",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+
+        if (stats.recentTransactions.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                    shape = KelolaRadius.ShapeCard,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.ShoppingBag,
+                                contentDescription = null,
+                                tint = KelolaTheme.textTertiary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Belum ada transaksi hari ini",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Buka kasir untuk melayani transaksi pertamamu.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        } else {
+            items(stats.recentTransactions) { tx ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelectTransaction(tx) }
+                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                    shape = KelolaRadius.ShapeCard,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(KelolaSpacing.Space4),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (tx.status == "COMPLETED") SuccessContainer else MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.PointOfSale,
+                                    contentDescription = null,
+                                    tint = if (tx.status == "COMPLETED") SuccessGreen else KelolaTheme.textTertiary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(KelolaSpacing.Space3))
+                            Column {
+                                Text(
+                                    text = tx.transactionNumber,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = "${FormatUtils.formatTime(tx.createdAt)} • ${tx.paymentMethod}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        // Kolom nominal rata kanan dengan lebar tetap agar digit satuan sejajar vertikal
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            modifier = Modifier.width(KelolaSpacing.AmountColumnWidth)
+                        ) {
+                            Text(
+                                text = if (tx.status == "COMPLETED") "+${FormatUtils.formatRupiah(tx.total)}" else FormatUtils.formatRupiah(tx.total),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (tx.status == "COMPLETED") KelolaTheme.positive else KelolaTheme.textTertiary,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            if (tx.status == "CANCELLED") {
+                                Text(
+                                    text = "Dibatalkan",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = DangerRed,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}

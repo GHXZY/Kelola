@@ -1,0 +1,6 @@
+{
+  "name": "Kelola",
+  "description": "Aplikasi kasir mahasiswa dengan database local SQLite untuk pencatatan transaksi offline cepat dan mudah",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
