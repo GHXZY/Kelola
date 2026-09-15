@@ -14,11 +14,17 @@
 
   <br /><br />
 
-  <a href="https://github.com/GHXZY/Kelola/releases/download/Kelola-Android-App/Kelola-release.apk">
-    <img src="https://img.shields.io/badge/Download%20APK-Kelola--release.apk-238636?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" height="42" />
-  </a>
+  <p align="center">
+    <a href="https://github.com/GHXZY/Kelola/releases/download/Kelola-Android-App/Kelola-release.apk">
+      <img src="https://img.shields.io/badge/⚡_Download_APK-Kelola--release.apk-00796B?style=for-the-badge&logo=android&logoColor=white" alt="Download APK Kelola" height="42" />
+    </a>
+    &nbsp;&nbsp;
+    <a href="https://github.com/GHXZY/Kelola/releases">
+      <img src="https://img.shields.io/badge/GitHub-Releases-24292e?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Releases" height="42" />
+    </a>
+  </p>
 
-  <br /><br />
+  <br />
 
   <p align="center">
     <a href="#-tentang-kelola">Tentang Kelola</a> •
