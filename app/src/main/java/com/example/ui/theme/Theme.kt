@@ -38,10 +38,10 @@ fun isAppInDarkTheme(): Boolean {
 object KelolaRadius {
     val Sm: Dp = 4.dp             // 0.25rem
     val Small: Dp = 8.dp          // 0.5rem - chip, badges
-    val Input: Dp = 8.dp          // 0.5rem - inputs, buttons, form elements
+    val Input: Dp = 12.dp         // 0.75rem - inputs, buttons, form elements
     val Md: Dp = 12.dp            // 0.75rem
-    val Card: Dp = 16.dp          // 1rem (rounded-lg) - cards, modals, panels
-    val Hero: Dp = 16.dp          // 1rem (rounded-lg)
+    val Card: Dp = 12.dp          // 0.75rem - cards, containers
+    val Hero: Dp = 12.dp          // 0.75rem
     val Sheet: Dp = 16.dp         // 1rem (rounded-lg)
     val Xl: Dp = 24.dp            // 1.5rem
     val Full: Shape = CircleShape // 9999px
@@ -49,10 +49,10 @@ object KelolaRadius {
     val ShapeSm = RoundedCornerShape(4.dp)
     val ShapeSmall = RoundedCornerShape(8.dp)
     val ShapeChip = RoundedCornerShape(8.dp)
-    val ShapeInput = RoundedCornerShape(8.dp)
+    val ShapeInput = RoundedCornerShape(12.dp)
     val ShapeMedium = RoundedCornerShape(12.dp)
-    val ShapeCard = RoundedCornerShape(16.dp)
-    val ShapeHero = RoundedCornerShape(16.dp)
+    val ShapeCard = RoundedCornerShape(12.dp)
+    val ShapeHero = RoundedCornerShape(12.dp)
     val ShapeSheet = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
     val ShapeXl = RoundedCornerShape(24.dp)
 }

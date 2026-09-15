@@ -304,76 +304,19 @@ fun ProductScreen(
         ) {
             Spacer(modifier = Modifier.height(KelolaSpacing.Space1))
 
-            // Akses Cepat Catat Biaya & Promo (Tombol Sekunder 44px, Radius 14px)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space2)
-            ) {
-                Surface(
-                    onClick = onOpenAddExpense,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(KelolaSpacing.ButtonHeightSecondary)
-                        .testTag("button_quick_record_expense"),
-                    shape = KelolaRadius.ShapeInput,
-                    color = DangerContainer,
-                    border = BorderStroke(1.dp, DangerRed.copy(alpha = 0.25f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = KelolaSpacing.Space2),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            Icons.Default.TrendingDown,
-                            contentDescription = null,
-                            tint = DangerRed,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(KelolaSpacing.Space2))
-                        Text(
-                            "Catat Biaya",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DangerRed,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
-                }
-
-                Surface(
-                    onClick = onOpenPromo,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(KelolaSpacing.ButtonHeightSecondary)
-                        .testTag("button_quick_promo"),
-                    shape = KelolaRadius.ShapeInput,
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, BorderLight)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = KelolaSpacing.Space2),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            Icons.Default.LocalOffer,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(KelolaSpacing.Space2))
-                        Text(
-                            "Promo",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
-                }
+            Column {
+                Text(
+                    text = "Manajemen Produk",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Total ${products.size} barang terdaftar",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -382,7 +325,7 @@ fun ProductScreen(
             SearchField(
                 query = searchQuery,
                 onQueryChange = { searchQuery = it },
-                placeholder = "Cari produk inventori...",
+                placeholder = "Cari nama barang atau kategori...",
                 testTag = "inventory_search_input"
             )
 
@@ -394,58 +337,6 @@ fun ProductScreen(
                 selectedCategory = selectedCategoryName,
                 onSelectCategory = { selectedCategoryName = it }
             )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Asset Summary Card (Tanpa border, soft shadow)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
-                shape = KelolaRadius.ShapeCard,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Total katalog",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "${products.size} jenis barang",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "Estimasi nilai stok",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = FormatUtils.formatRupiah(totalAssetValue),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -467,234 +358,196 @@ fun ProductScreen(
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
                     items(filteredProducts, key = { it.id }) { product ->
-                        var menuExpanded by remember { mutableStateOf(false) }
-
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 3.dp)
+                                .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp)
                                 .testTag("product_row_${product.id}"),
                             shape = KelolaRadius.ShapeCard,
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, BorderLight),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        // Product initials box 44x44
+                                        val initials = product.name.take(2).uppercase()
+                                        Surface(
+                                            modifier = Modifier.size(44.dp),
+                                            shape = KelolaRadius.ShapeInput,
+                                            color = MaterialTheme.colorScheme.surfaceVariant
+                                        ) {
+                                            Box(
+                                                contentAlignment = Alignment.Center,
+                                                modifier = Modifier.fillMaxSize()
+                                            ) {
+                                                Text(
+                                                    text = initials,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 14.sp,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            val catName = categoryMap[product.categoryId]?.name ?: "Umum"
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                EditorialCategoryTag(category = catName)
+
+                                                if (product.expirationDate != null) {
+                                                    val now = System.currentTimeMillis()
+                                                    val isExpired = product.expirationDate < now
+                                                    val isExpiringSoon = !isExpired && (product.expirationDate - now) < (7L * 86400000L)
+                                                    if (isExpired || isExpiringSoon) {
+                                                        Surface(
+                                                            shape = KelolaRadius.ShapeSmall,
+                                                            color = if (isExpired) DangerContainer else WarningContainer
+                                                        ) {
+                                                            Text(
+                                                                text = if (isExpired) "Kadaluarsa" else "Segera Exp.",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = if (isExpired) DangerRed else WarningAmber,
+                                                                fontWeight = FontWeight.SemiBold,
+                                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+
+                                            Text(
+                                                text = product.name,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+
+                                            Spacer(modifier = Modifier.height(2.dp))
+
+                                            Text(
+                                                text = "Modal: ${FormatUtils.formatRupiah(product.costPrice)} • Jual: ${FormatUtils.formatRupiah(product.sellingPrice)}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+
+                                    StockBadge(
+                                        stock = product.stock,
+                                        minimumStock = product.minimumStock,
+                                        unit = product.unit
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+                                androidx.compose.material3.HorizontalDivider(
+                                    color = BorderLight,
+                                    thickness = 1.dp
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                // Bottom Actions Row
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    // Left: Restock (+) & Reduce (-) buttons
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Surface(
+                                            onClick = { onRestockProduct(product) },
+                                            shape = KelolaRadius.ShapeInput,
+                                            color = SuccessContainer,
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .testTag("button_restock_${product.id}")
                                         ) {
-                                            val catName = categoryMap[product.categoryId]?.name ?: "Umum"
-                                            EditorialCategoryTag(category = catName)
-
-                                            StockBadge(
-                                                stock = product.stock,
-                                                minimumStock = product.minimumStock,
-                                                unit = product.unit
-                                            )
-
-                                            // Expiration Status Badge
-                                            if (product.expirationDate != null) {
-                                                val now = System.currentTimeMillis()
-                                                val isExpired = product.expirationDate < now
-                                                val isExpiringSoon = !isExpired && (product.expirationDate - now) < (7L * 86400000L)
-
-                                                Surface(
-                                                    shape = KelolaRadius.ShapeSmall,
-                                                    color = when {
-                                                        isExpired -> DangerRed.copy(alpha = 0.15f)
-                                                        isExpiringSoon -> WarningAmber.copy(alpha = 0.2f)
-                                                        else -> MaterialTheme.colorScheme.surfaceVariant
-                                                    }
-                                                ) {
-                                                    Row(
-                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        if (isExpired || isExpiringSoon) {
-                                                            Icon(
-                                                                Icons.Default.Warning,
-                                                                contentDescription = null,
-                                                                tint = if (isExpired) DangerRed else WarningAmber,
-                                                                modifier = Modifier.size(12.dp)
-                                                            )
-                                                            Spacer(modifier = Modifier.width(4.dp))
-                                                        }
-                                                        Text(
-                                                            text = when {
-                                                                isExpired -> "Kadaluarsa"
-                                                                isExpiringSoon -> "Segera Exp."
-                                                                else -> "Exp: ${FormatUtils.formatDate(product.expirationDate)}"
-                                                            },
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = when {
-                                                                isExpired -> DangerRed
-                                                                isExpiringSoon -> WarningAmber
-                                                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                                            },
-                                                            fontWeight = FontWeight.SemiBold
-                                                        )
-                                                    }
-                                                }
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                Icon(
+                                                    Icons.Default.Add,
+                                                    contentDescription = "Tambah Stok",
+                                                    tint = SuccessGreen,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
                                             }
                                         }
 
-                                        Spacer(modifier = Modifier.height(6.dp))
-
-                                        Text(
-                                            text = product.name,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-
-                                        Spacer(modifier = Modifier.height(4.dp))
-
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        Surface(
+                                            onClick = { onReduceStockProduct(product) },
+                                            shape = KelolaRadius.ShapeInput,
+                                            color = WarningContainer,
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .testTag("button_reduce_stock_${product.id}")
                                         ) {
-                                            Column {
-                                                Text(
-                                                    text = "Harga Jual",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = FormatUtils.formatRupiah(product.sellingPrice),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-
-                                            Column {
-                                                Text(
-                                                    text = "Modal (HPP)",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = FormatUtils.formatRupiah(product.costPrice),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-
-                                            val profitPerItem = product.sellingPrice - product.costPrice
-                                            Column {
-                                                Text(
-                                                    text = "Profit/pcs",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = FormatUtils.formatRupiah(profitPerItem),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = SuccessGreen
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                Icon(
+                                                    Icons.Default.Remove,
+                                                    contentDescription = "Kurangi Stok",
+                                                    tint = WarningAmber,
+                                                    modifier = Modifier.size(18.dp)
                                                 )
                                             }
                                         }
                                     }
 
-                                    Box {
-                                        IconButton(
-                                            onClick = { menuExpanded = true },
-                                            modifier = Modifier.testTag("button_product_options_${product.id}")
+                                    // Right: Edit & Delete buttons
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Surface(
+                                            onClick = { onEditProduct(product) },
+                                            shape = KelolaRadius.ShapeInput,
+                                            color = MaterialTheme.colorScheme.surfaceVariant,
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .testTag("button_edit_product_${product.id}")
                                         ) {
-                                            Icon(
-                                                Icons.Default.MoreVert,
-                                                contentDescription = "Opsi Produk",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                Icon(
+                                                    Icons.Default.Edit,
+                                                    contentDescription = "Edit Produk",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
                                         }
 
-                                        DropdownMenu(
-                                            expanded = menuExpanded,
-                                            onDismissRequest = { menuExpanded = false }
+                                        Surface(
+                                            onClick = { onDeleteProduct(product) },
+                                            shape = KelolaRadius.ShapeInput,
+                                            color = DangerContainer,
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .testTag("button_delete_product_${product.id}")
                                         ) {
-                                            DropdownMenuItem(
-                                                text = { Text("Tambah Stok (Restock)") },
-                                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                                                onClick = {
-                                                    menuExpanded = false
-                                                    onRestockProduct(product)
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("Kurangi Stok") },
-                                                leadingIcon = { Icon(Icons.Default.Remove, contentDescription = null, tint = DangerRed) },
-                                                onClick = {
-                                                    menuExpanded = false
-                                                    onReduceStockProduct(product)
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("Edit Produk") },
-                                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                                                onClick = {
-                                                    menuExpanded = false
-                                                    onEditProduct(product)
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("Hapus Produk", color = DangerRed) },
-                                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = DangerRed) },
-                                                onClick = {
-                                                    menuExpanded = false
-                                                    onDeleteProduct(product)
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                // Fast Action Buttons (Quick Restock and Quick Reduce Stock) - Radius 10px, Tanpa Border
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Surface(
-                                        onClick = { onReduceStockProduct(product) },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(40.dp)
-                                            .testTag("button_quick_reduce_${product.id}"),
-                                        shape = KelolaRadius.ShapeSmall,
-                                        color = DangerContainer
-                                    ) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier.fillMaxSize()
-                                        ) {
-                                            Icon(Icons.Default.Remove, contentDescription = "Kurangi Stok", tint = DangerRed, modifier = Modifier.size(18.dp))
-                                        }
-                                    }
-
-                                    Surface(
-                                        onClick = { onRestockProduct(product) },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(40.dp)
-                                            .testTag("button_quick_restock_${product.id}"),
-                                        shape = KelolaRadius.ShapeSmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    ) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier.fillMaxSize()
-                                        ) {
-                                            Icon(Icons.Default.Add, contentDescription = "Tambah Stok", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "Hapus Produk",
+                                                    tint = DangerRed,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }

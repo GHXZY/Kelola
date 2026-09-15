@@ -1,5 +1,13 @@
 package com.example.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -119,7 +127,10 @@ fun KelolaPrimaryButton(
                     text = text,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Medium,
-                    color = if (enabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (enabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -128,7 +139,7 @@ fun KelolaPrimaryButton(
 
 /**
  * Kelola Secondary Button (Oceanic Modernity)
- * Height 44px, Surface #FFFFFF, 1px solid #006199 border, text #006199, Rounded 8px (ShapeInput).
+ * Height 48px, Surface #FFFFFF, 1px solid #006199 border, text #006199, Rounded 12px (ShapeInput).
  */
 @Composable
 fun KelolaSecondaryButton(
@@ -167,7 +178,10 @@ fun KelolaSecondaryButton(
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Medium,
-                color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -206,8 +220,12 @@ fun SummaryCard(
                     text = title,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+                Spacer(modifier = Modifier.width(KelolaSpacing.Space1))
                 Box(
                     modifier = Modifier
                         .size(KelolaSpacing.IconContainerSize)
@@ -224,20 +242,35 @@ fun SummaryCard(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            AnimatedContent(
+                targetState = value,
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
+                        slideInVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)) { it / 3 })
+                        .togetherWith(
+                            fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)) +
+                            slideOutVertically(animationSpec = tween(200, easing = FastOutSlowInEasing)) { -it / 3 }
+                        )
+                },
+                label = "SummaryCardValueAnim"
+            ) { animatedVal ->
+                Text(
+                    text = animatedVal,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             if (subtitle != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -512,6 +545,8 @@ fun StockBadge(
             color = textColor,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }

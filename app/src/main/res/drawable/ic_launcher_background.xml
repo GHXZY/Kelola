@@ -9,19 +9,14 @@
         android:pathData="M0,0h108v108h-108z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="10"
-                android:startY="10"
-                android:endX="98"
-                android:endY="98"
+                android:startX="108"
+                android:startY="108"
+                android:endX="0"
+                android:endY="0"
                 android:type="linear">
-                <item android:offset="0.0" android:color="#004974" />
-                <item android:offset="0.6" android:color="#006199" />
-                <item android:offset="1.0" android:color="#0B658A" />
+                <item android:offset="0.0" android:color="#0CAAA9" />
+                <item android:offset="1.0" android:color="#0E8991" />
             </gradient>
         </aapt:attr>
     </path>
-    <!-- Soft circular ambient depth matching the official circular badge -->
-    <path
-        android:pathData="M54,16 A38,38 0 1,0 54,92 A38,38 0 1,0 54,16 Z"
-        android:fillColor="#15FFFFFF" />
 </vector>

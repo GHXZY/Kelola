@@ -367,7 +367,9 @@ fun CashierScreen(
                                                 text = if (isOutOfStock) "Habis" else "Pilih",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.SemiBold,
-                                                color = if (!isOutOfStock) MaterialTheme.colorScheme.primary else KelolaTheme.textTertiary
+                                                color = if (!isOutOfStock) MaterialTheme.colorScheme.primary else KelolaTheme.textTertiary,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
@@ -476,7 +478,7 @@ fun CashierScreen(
                             border = BorderStroke(1.dp, DangerRed.copy(alpha = 0.25f)),
                             modifier = Modifier
                                 .weight(1f)
-                                .height(KelolaSpacing.ButtonHeightSecondary)
+                                .height(KelolaSpacing.ButtonHeightCta)
                                 .testTag("button_cancel_order_bar")
                         ) {
                             Row(
@@ -485,22 +487,24 @@ fun CashierScreen(
                                 modifier = Modifier.padding(horizontal = KelolaSpacing.Space3)
                             ) {
                                 Icon(
-                                    Icons.Default.RemoveShoppingCart,
+                                    Icons.Default.Close,
                                     contentDescription = null,
                                     tint = DangerRed,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(KelolaSpacing.Space1))
                                 Text(
-                                    text = "Tidak Jadi Beli",
+                                    text = "Batal Beli",
+                                    style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.SemiBold,
-                                    fontSize = 13.sp,
-                                    color = DangerRed
+                                    color = DangerRed,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
 
-                        // Tombol Bayar / Buka Keranjang (Tombol Utama CTA: 52px, Solid Primary)
+                        // Tombol Bayar / Buka Keranjang (Tombol Utama CTA: 48px, Solid Primary)
                         Surface(
                             onClick = onOpenCart,
                             shape = KelolaRadius.ShapeInput,
@@ -519,9 +523,11 @@ fun CashierScreen(
                             ) {
                                 Text(
                                     text = "Bayar",
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 15.sp,
-                                    color = Color.White
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                                 Spacer(modifier = Modifier.width(KelolaSpacing.Space2))
                                 Icon(

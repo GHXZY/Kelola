@@ -13,115 +13,114 @@ import androidx.compose.ui.unit.sp
 // =========================================================================
 
 val Typography = Typography(
-    // Display (Playfair Display 56px 600)
+    // Statistic Large / Display
     displayLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 56.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-1.12).sp // -0.02em
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.5).sp
     ),
-    // Display Mobile (Playfair Display 36px 600) - Hero Saldo / Big numbers
+    // Statistic / Hero Big numbers (24sp / 32sp Bold)
     displayMedium = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
-        letterSpacing = (-0.36).sp // -0.01em
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
+        letterSpacing = (-0.25).sp
     ),
     displaySmall = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 30.sp,
-        lineHeight = 38.sp,
-        letterSpacing = (-0.3).sp
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp,
+        lineHeight = 28.sp,
+        letterSpacing = (-0.2).sp
     ),
-    // Headline-lg Mobile (Playfair Display 28px 600)
+    // Page Title (24sp / 32sp Bold)
     headlineLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = (-0.28).sp // -0.01em
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
+        letterSpacing = (-0.25).sp
     ),
-    // Headline-md (Playfair Display 28px 500)
     headlineMedium = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 28.sp,
-        lineHeight = 36.sp
-    ),
-    // Headline-sm (Playfair Display 22px 500)
-    headlineSmall = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
-        lineHeight = 30.sp
+        lineHeight = 28.sp
     ),
-    // Title-lg (Inter 20px 600)
+    // Section Title (20sp / 28sp SemiBold)
+    headlineSmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 20.sp,
+        lineHeight = 28.sp
+    ),
+    // Section Title (20sp / 28sp SemiBold)
     titleLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
         lineHeight = 28.sp,
-        letterSpacing = (-0.2).sp // -0.01em
+        letterSpacing = (-0.2).sp
     ),
-    // Title-md (Inter 16px 600)
+    // Card Title / Amount (16sp / 24sp SemiBold)
     titleMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 16.sp,
         lineHeight = 24.sp
     ),
+    // Sub-title / Product Item Title (14sp / 20sp SemiBold)
     titleSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
-    // Body-lg (Inter 18px 400)
+    // Body (14sp / 20sp Regular)
     bodyLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
-        fontSize = 18.sp,
-        lineHeight = 28.sp
+        fontSize = 14.sp,
+        lineHeight = 20.sp
     ),
-    // Body-md (Inter 15px 400)
+    // Body / Body Emphasis (14sp / 20sp Regular)
     bodyMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
-        fontSize = 15.sp,
-        lineHeight = 24.sp
+        fontSize = 14.sp,
+        lineHeight = 20.sp
     ),
-    // Body-sm (Inter 13px 400)
+    // Caption / Secondary Body (12sp / 16sp Regular)
     bodySmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
-        fontSize = 13.sp,
-        lineHeight = 20.sp
+        fontSize = 12.sp,
+        lineHeight = 16.sp
     ),
-    // Label-md (Inter 14px 500, letterSpacing 0.01em) - Buttons & Primary actions
+    // Button (14sp / 20sp Medium)
     labelLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.14.sp // 0.01em
+        letterSpacing = 0.1.sp
     ),
-    // Label-md secondary (Inter 13px 500)
+    // Label (12sp / 16sp Medium)
     labelMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,
-        fontSize = 13.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 0.13.sp
+        fontSize = 12.sp,
+        lineHeight = 16.sp
     ),
-    // Label-sm (Inter 11px 600, letterSpacing 0.04em) - Eyebrows & metadata tags
+    // Caption / Tag (11sp / 16sp Regular/SemiBold)
     labelSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 11.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.44.sp // 0.04em
+        letterSpacing = 0.2.sp
     )
 )

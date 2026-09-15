@@ -27,12 +27,14 @@ object KelolaSpacing {
     val ScreenMargin: Dp = 16.dp
 
     // Aturan Ukuran Tombol & Input (Android Touch Ergonomics)
-    val ButtonHeightCta: Dp = 52.dp          // Tombol utama (CTA penuh): 52dp
+    val ButtonHeightCta: Dp = 48.dp          // Tombol utama (CTA penuh): 48dp
     val ButtonHeightSecondary: Dp = 48.dp    // Tombol standar/sekunder: 48dp
+    val ButtonHeightCompact: Dp = 40.dp      // Tombol kompak: 40dp
+    val ButtonHeightSmall: Dp = 36.dp        // Tombol kecil: 36dp
     val MinTouchTarget: Dp = 48.dp           // Area sentuh minimum Android (Touch target >= 48dp)
     val MaxIconInTarget: Dp = 24.dp          // Ikon standar 24x24dp di dalam target sentuh 48dp
     val ChipHeight: Dp = 36.dp               // Chip / filter: 32-36dp
-    val InputHeight: Dp = 52.dp              // Input field height: 52-56dp
+    val InputHeight: Dp = 48.dp              // Input field height: 48-52dp
     val HeaderHeight: Dp = 56.dp             // Header / Top App Bar height: 56dp
     val IconContainerSize: Dp = 40.dp        // Icon container: 40dp (dengan icon 20-24dp)
 

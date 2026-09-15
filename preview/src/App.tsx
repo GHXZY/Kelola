@@ -38,6 +38,7 @@ import { PendingChangesScreen } from './screens/PendingChangesScreen';
 import { PromoScreen } from './screens/PromoScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { AddEditProductScreen } from './screens/AddEditProductScreen';
+import { PaymentScreen } from './screens/PaymentScreen';
 
 // Dialogs
 import { CartSheet } from './dialogs/CartSheet';
@@ -82,6 +83,7 @@ export const App: React.FC = () => {
   // Modal Dialog States
   const [showCartSheet, setShowCartSheet] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [isShowingPaymentScreen, setIsShowingPaymentScreen] = useState(false);
   const [showNotesDialog, setShowNotesDialog] = useState(false);
   const [lastCompletedTx, setLastCompletedTx] = useState<TransactionEntity | null>(null);
   const [selectedTxForDetail, setSelectedTxForDetail] = useState<TransactionEntity | null>(null);
@@ -576,6 +578,16 @@ export const App: React.FC = () => {
             onDeletePromo={handleDeletePromo}
             onNavigateBack={() => setIsShowingPromo(false)}
           />
+        ) : isShowingPaymentScreen ? (
+          <PaymentScreen
+            cart={cart}
+            settings={settings}
+            onCompletePayment={(method, cash, debtName, debtPhone, changePending) => {
+              handleCompletePayment(method, cash, debtName, debtPhone, changePending);
+              setIsShowingPaymentScreen(false);
+            }}
+            onNavigateBack={() => setIsShowingPaymentScreen(false)}
+          />
         ) : (
           <>
             {/* Primary Tab Screens */}
@@ -684,7 +696,7 @@ export const App: React.FC = () => {
           onRemoveFromCart={handleRemoveFromCart}
           onProceedToPayment={() => {
             setShowCartSheet(false);
-            setShowPaymentDialog(true);
+            setIsShowingPaymentScreen(true);
           }}
           onDismiss={() => setShowCartSheet(false)}
         />

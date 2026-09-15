@@ -1,7 +1,11 @@
 package com.example.ui.products
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,45 +14,39 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,33 +60,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entity.CategoryEntity
 import com.example.data.local.entity.ProductEntity
-import com.example.ui.components.KelolaLogoBadge
-import com.example.ui.theme.BorderLight
-import com.example.ui.theme.BrandDeep
-import com.example.ui.theme.BrandSky
+import com.example.ui.theme.BrandPrimary
 import com.example.ui.theme.DangerRed
-import com.example.ui.theme.KelolaRadius
-import com.example.ui.theme.KelolaSpacing
-import com.example.ui.theme.PrimaryBlue
-import com.example.ui.theme.PrimaryBlueContainer
-import com.example.ui.theme.SuccessGreen
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.kelolaSoftShadow
 import com.example.util.FormatUtils
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 /**
  * AddEditProductScreen:
- * Laman penuh (bukan popup) untuk menambah dan mengedit produk secara komprehensif,
- * sesuai prinsip Kelola Layout System (4px grid, 20dp margin, 52dp CTA button).
+ * Tampilan Tambah/Edit Produk yang SAMA PERSIS 1:1 dengan localhost preview (AddEditProductScreen.tsx).
+ * Digunakan baik sebagai modal overlay maupun screen mandiri.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,31 +102,32 @@ fun AddEditProductScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val isEditing = initialProduct != null
 
+    // Form fields matching preview
     var name by remember { mutableStateOf(initialProduct?.name ?: "") }
     var categoryId by remember {
         mutableStateOf(initialProduct?.categoryId ?: (categories.firstOrNull()?.id ?: 1L))
     }
     var costPriceText by remember {
-        mutableStateOf(initialProduct?.costPrice?.takeIf { it > 0 }?.let { FormatUtils.formatNumberWithDots(it) } ?: "0")
+        mutableStateOf(if (initialProduct?.costPrice != null && initialProduct.costPrice > 0L) initialProduct.costPrice.toString() else "")
     }
     var sellingPriceText by remember {
-        mutableStateOf(initialProduct?.sellingPrice?.takeIf { it > 0 }?.let { FormatUtils.formatNumberWithDots(it) } ?: "")
+        mutableStateOf(if (initialProduct?.sellingPrice != null && initialProduct.sellingPrice > 0L) initialProduct.sellingPrice.toString() else "")
     }
     var stockText by remember {
-        mutableStateOf(initialProduct?.stock?.toString() ?: "0")
+        mutableStateOf(initialProduct?.stock?.toString() ?: "10")
     }
     var minStockText by remember {
-        mutableStateOf(initialProduct?.minimumStock?.toString() ?: "5")
+        mutableStateOf(initialProduct?.minimumStock?.toString() ?: "3")
     }
     var unit by remember { mutableStateOf(initialProduct?.unit ?: "pcs") }
-    var expirationDate by remember { mutableStateOf<Long?>(initialProduct?.expirationDate) }
-    var showCustomExpiryDialog by remember { mutableStateOf(false) }
-    var showAddCategoryPopup by remember { mutableStateOf(false) }
 
-    var categoryDropdownExpanded by remember { mutableStateOf(false) }
-    val commonUnits = listOf("pcs", "bungkus", "botol", "gelas", "porsi", "pack", "kotak", "kg", "gram", "ikat")
+    val units = listOf("pcs", "botol", "cup", "porsi", "bungkus", "karung", "pouch")
+
+    // Category selection dropdown state
+    var showCategoryDropdown by remember { mutableStateOf(false) }
 
     LaunchedEffect(categories) {
         if (categories.isNotEmpty() && categories.none { it.id == categoryId }) {
@@ -144,757 +137,872 @@ fun AddEditProductScreen(
 
     val selectedCategoryName = categories.find { it.id == categoryId }?.name ?: "Pilih Kategori"
 
+    // Expiry state matching preview (DATE_ONLY vs DATE_TIME)
+    val initialExpiry = initialProduct?.expirationDate?.let { Date(it) }
+    var hasExpiry by remember { mutableStateOf(initialExpiry != null) }
+    var expiryMode by remember { mutableStateOf("DATE_ONLY") } // "DATE_ONLY" | "DATE_TIME"
+
+    val sdfDate = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val sdfTime = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+
+    var expiryDate by remember {
+        mutableStateOf(initialExpiry?.let { sdfDate.format(it) } ?: "")
+    }
+    var expiryTime by remember {
+        mutableStateOf(initialExpiry?.let { sdfTime.format(it) } ?: "23:59")
+    }
+
+    // Helper to calculate preset days
+    fun setPresetDays(days: Int) {
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.DAY_OF_YEAR, days)
+        expiryDate = sdfDate.format(cal.time)
+        hasExpiry = true
+    }
+
+    // Helper to compute timestamp
+    fun calculateExpiryTimestamp(): Long? {
+        if (!hasExpiry || expiryDate.isBlank()) return null
+        return try {
+            val timeStr = if (expiryMode == "DATE_ONLY") "23:59:59" else "${expiryTime.ifBlank { "00:00" }}:00"
+            val fullSdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            fullSdf.parse("$expiryDate $timeStr")?.time
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    // Error states
     var nameError by remember { mutableStateOf(false) }
     var sellingPriceError by remember { mutableStateOf(false) }
 
-    // Live profit calculation
-    val costPrice = FormatUtils.parseRupiahInput(costPriceText)
-    val sellingPrice = FormatUtils.parseRupiahInput(sellingPriceText)
-    val profitPerUnit = sellingPrice - costPrice
-    val profitPercentage = if (costPrice > 0L) {
-        ((profitPerUnit.toDouble() / costPrice.toDouble()) * 100).toInt()
-    } else 0
+    // Date / Time picker dialog openers
+    fun openDatePicker() {
+        val cal = Calendar.getInstance()
+        val dpd = DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                val selectedCal = Calendar.getInstance()
+                selectedCal.set(year, month, dayOfMonth)
+                expiryDate = sdfDate.format(selectedCal.time)
+            },
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH),
+            cal.get(Calendar.DAY_OF_MONTH)
+        )
+        dpd.show()
+    }
 
-    val inputColors = OutlinedTextFieldDefaults.colors(
-        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-        focusedBorderColor = MaterialTheme.colorScheme.primary,
-        unfocusedBorderColor = Color.Transparent,
-        focusedLabelColor = MaterialTheme.colorScheme.primary,
-        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-        focusedPrefixColor = MaterialTheme.colorScheme.onSurface,
-        unfocusedPrefixColor = MaterialTheme.colorScheme.onSurface
-    )
+    fun openTimePicker() {
+        val cal = Calendar.getInstance()
+        val tpd = TimePickerDialog(
+            context,
+            { _, hourOfDay, minute ->
+                val formattedHour = if (hourOfDay < 10) "0$hourOfDay" else "$hourOfDay"
+                val formattedMinute = if (minute < 10) "0$minute" else "$minute"
+                expiryTime = "$formattedHour:$formattedMinute"
+            },
+            cal.get(Calendar.HOUR_OF_DAY),
+            cal.get(Calendar.MINUTE),
+            true
+        )
+        tpd.show()
+    }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 0.dp
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFF7F9FF))
+    ) {
+        // =========================================================================
+        // 1. TOP BAR (Sama persis dengan AddEditProductScreen.tsx)
+        // =========================================================================
+        Surface(
+            color = Color.White,
+            modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
+                // Circular Back Button
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = KelolaSpacing.ScreenMargin, vertical = KelolaSpacing.Space3),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF1F5F9))
+                        .clickable { onNavigateBack() }
+                        .testTag("button_back_product_form"),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space3)
-                    ) {
-                        IconButton(
-                            onClick = onNavigateBack,
-                            modifier = Modifier
-                                .size(KelolaSpacing.MinTouchTarget)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .testTag("button_back_from_add_product")
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Kembali ke Katalog",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Kembali",
+                        tint = BrandPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
 
-                        Column {
-                            Text(
-                                text = if (isEditing) "Edit Produk" else "Tambah Produk Baru",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                letterSpacing = (-0.3).sp
-                            )
-                            Text(
-                                text = "Laman Katalog & Inventaris Kelola",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Medium,
-                                letterSpacing = 0.5.sp
-                            )
-                        }
-                    }
-
-                    KelolaLogoBadge(
-                        size = 38.dp,
-                        iconSize = 22.dp
+                Column {
+                    Text(
+                        text = if (isEditing) "Edit Informasi Produk" else "Tambah Produk Baru",
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1E293B)
+                        )
+                    )
+                    Text(
+                        text = "Lengkapi detail barang dagangan toko",
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            color = Color(0xFF64748B)
+                        )
                     )
                 }
             }
-        },
-        bottomBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = KelolaSpacing.ScreenMargin, vertical = KelolaSpacing.Space3),
-                    horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space3)
-                ) {
-                    OutlinedButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(KelolaSpacing.ButtonHeightCta),
-                        shape = KelolaRadius.ShapeInput,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    ) {
-                        Text(
-                            text = "Batal",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
-
-                    Button(
-                        onClick = {
-                            if (name.isBlank()) {
-                                nameError = true
-                                return@Button
-                            }
-                            val sp = FormatUtils.parseRupiahInput(sellingPriceText)
-                            if (sp <= 0) {
-                                sellingPriceError = true
-                                return@Button
-                            }
-
-                            val cp = FormatUtils.parseRupiahInput(costPriceText)
-                            val stk = stockText.toIntOrNull() ?: 0
-                            val minStk = minStockText.toIntOrNull() ?: 5
-
-                            onSaveProduct(
-                                name.trim(),
-                                categoryId,
-                                cp,
-                                sp,
-                                stk,
-                                minStk,
-                                unit.trim(),
-                                expirationDate
-                            )
-                        },
-                        modifier = Modifier
-                            .weight(2f)
-                            .height(KelolaSpacing.ButtonHeightCta)
-                            .testTag("button_save_product"),
-                        shape = KelolaRadius.ShapeInput,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(KelolaSpacing.Space2))
-                        Text(
-                            text = if (isEditing) "Simpan Perubahan" else "Simpan Produk",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
-                }
-            }
         }
-    ) { innerPadding ->
-        LazyColumn(
+
+        // =========================================================================
+        // 2. SCROLLABLE FORM (Sama persis dengan AddEditProductScreen.tsx)
+        // =========================================================================
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = KelolaSpacing.ScreenMargin),
-            verticalArrangement = Arrangement.spacedBy(KelolaSpacing.Space4)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                Spacer(modifier = Modifier.height(KelolaSpacing.Space2))
-            }
-
-            // =========================================================================
-            // CARD 1: INFORMASI UTAMA PRODUK
-            // =========================================================================
-            item {
-                Card(
+            // -------------------------------------------------------------
+            // CARD 1: INFORMASI DETAIL PRODUK
+            // -------------------------------------------------------------
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
-                    shape = KelolaRadius.ShapeCard,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(KelolaSpacing.Space4),
-                        verticalArrangement = Arrangement.spacedBy(KelolaSpacing.Space3)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space2)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Inventory2,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Text(
-                                text = "Informasi Utama",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                    // Nama Barang *
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "Nama Barang *",
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF334155)
                             )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        // Nama Produk
+                        )
                         OutlinedTextField(
                             value = name,
                             onValueChange = {
                                 name = it
                                 nameError = it.isBlank()
                             },
-                            label = { Text("Nama Produk *") },
-                            placeholder = { Text("Misal: Kopi Susu Aren, Mie Goreng, dsb") },
-                            isError = nameError,
-                            supportingText = {
-                                if (nameError) {
-                                    Text("Nama produk wajib diisi", color = DangerRed)
-                                }
+                            placeholder = {
+                                Text("Misal: Es Kopi Susu Aren", fontSize = 12.sp, color = Color(0xFF94A3B8))
                             },
                             singleLine = true,
-                            shape = KelolaRadius.ShapeInput,
-                            colors = inputColors,
+                            isError = nameError,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = Color(0xFFF1F5F9),
+                                focusedContainerColor = Color.White,
+                                unfocusedBorderColor = Color(0xFFE2E8F0),
+                                focusedBorderColor = BrandPrimary,
+                                focusedTextColor = Color(0xFF1E293B),
+                                unfocusedTextColor = Color(0xFF1E293B)
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .height(50.dp)
                                 .testTag("input_product_name")
                         )
+                        if (nameError) {
+                            Text("Nama barang wajib diisi", color = DangerRed, fontSize = 11.sp)
+                        }
+                    }
 
-                        // Kategori Dropdown & Add Button
+                    // Kategori Produk (+ Tombol Tambah Kategori)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "Kategori Produk",
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF334155)
+                            )
+                        )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            ExposedDropdownMenuBox(
-                                expanded = categoryDropdownExpanded,
-                                onExpandedChange = { categoryDropdownExpanded = !categoryDropdownExpanded },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                OutlinedTextField(
-                                    value = selectedCategoryName,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("Kategori Produk") },
-                                    trailingIcon = {
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryDropdownExpanded)
-                                    },
-                                    shape = KelolaRadius.ShapeInput,
-                                    colors = inputColors,
+                            // Dropdown selector
+                            Box(modifier = Modifier.weight(1f)) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFF1F5F9),
+                                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                                     modifier = Modifier
-                                        .menuAnchor()
                                         .fillMaxWidth()
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = categoryDropdownExpanded,
-                                    onDismissRequest = { categoryDropdownExpanded = false }
+                                        .height(44.dp)
+                                        .clickable { showCategoryDropdown = true }
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 14.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = selectedCategoryName,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF1E293B),
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            text = "▼",
+                                            fontSize = 10.sp,
+                                            color = Color(0xFF64748B)
+                                        )
+                                    }
+                                }
+
+                                DropdownMenu(
+                                    expanded = showCategoryDropdown,
+                                    onDismissRequest = { showCategoryDropdown = false },
+                                    modifier = Modifier.background(Color.White)
                                 ) {
                                     categories.forEach { cat ->
                                         DropdownMenuItem(
-                                            text = { Text(cat.name) },
+                                            text = { Text(cat.name, fontSize = 13.sp) },
                                             onClick = {
                                                 categoryId = cat.id
-                                                categoryDropdownExpanded = false
+                                                showCategoryDropdown = false
                                             }
                                         )
                                     }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.width(KelolaSpacing.Space2))
-
-                            IconButton(
-                                onClick = { showAddCategoryPopup = true },
+                            // Plus Button for New Category
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFEFF6FF),
+                                border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
                                 modifier = Modifier
-                                    .size(KelolaSpacing.MinTouchTarget)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { onOpenAddCategory() }
+                                    .testTag("button_add_category_modal")
                             ) {
-                                Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = "Tambah Kategori Baru",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        // Satuan Barang
-                        Column(verticalArrangement = Arrangement.spacedBy(KelolaSpacing.Space1)) {
-                            Text(
-                                text = "Satuan Barang",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold
-                            )
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space1)
-                            ) {
-                                items(commonUnits) { u ->
-                                    val isSelected = unit.equals(u, ignoreCase = true)
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { unit = u },
-                                        label = {
-                                            Text(
-                                                text = u,
-                                                fontSize = 12.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                            )
-                                        },
-                                        shape = KelolaRadius.ShapeSmall,
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                            labelColor = MaterialTheme.colorScheme.onSurface
-                                        ),
-                                        modifier = Modifier.heightIn(min = 38.dp)
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Tambah Kategori Baru",
+                                        tint = BrandPrimary,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
                         }
                     }
-                }
-            }
 
-            // =========================================================================
-            // CARD 2: PENETAPAN HARGA & ESTIMASI MARGIN
-            // =========================================================================
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
-                    shape = KelolaRadius.ShapeCard,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(KelolaSpacing.Space4),
-                        verticalArrangement = Arrangement.spacedBy(KelolaSpacing.Space3)
+                    // Grid 2 Kolom: Harga Modal & Harga Jual *
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space2)
+                        // Harga Modal (Rp)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(SuccessGreen.copy(alpha = 0.12f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Payments,
-                                    contentDescription = null,
-                                    tint = SuccessGreen,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
                             Text(
-                                text = "Penetapan Harga & Margin",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                text = "Harga Modal (Rp)",
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF334155)
+                                )
+                            )
+                            OutlinedTextField(
+                                value = costPriceText,
+                                onValueChange = { costPriceText = it.filter { c -> c.isDigit() } },
+                                placeholder = { Text("0", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color(0xFFF1F5F9),
+                                    focusedContainerColor = Color.White,
+                                    unfocusedBorderColor = Color(0xFFE2E8F0),
+                                    focusedBorderColor = BrandPrimary,
+                                    focusedTextColor = Color(0xFF1E293B),
+                                    unfocusedTextColor = Color(0xFF1E293B)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
                             )
                         }
 
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space2)
+                        // Harga Jual (Rp) *
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            OutlinedTextField(
-                                value = costPriceText,
-                                onValueChange = { costPriceText = FormatUtils.formatRupiahInput(it) },
-                                label = { Text("Harga Modal (HPP)") },
-                                prefix = { Text("Rp ", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface) },
-                                placeholder = { Text("0") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                shape = KelolaRadius.ShapeInput,
-                                colors = inputColors,
-                                modifier = Modifier.weight(1f)
+                            Text(
+                                text = "Harga Jual (Rp) *",
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF334155)
+                                )
                             )
-
                             OutlinedTextField(
                                 value = sellingPriceText,
                                 onValueChange = {
-                                    sellingPriceText = FormatUtils.formatRupiahInput(it)
-                                    sellingPriceError = FormatUtils.parseRupiahInput(sellingPriceText) <= 0
+                                    sellingPriceText = it.filter { c -> c.isDigit() }
+                                    sellingPriceError = (it.toLongOrNull() ?: 0L) <= 0
                                 },
-                                label = { Text("Harga Jual *") },
-                                prefix = { Text("Rp ", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface) },
-                                placeholder = { Text("10.000") },
-                                isError = sellingPriceError,
-                                supportingText = {
-                                    if (sellingPriceError) {
-                                        Text("Wajib diisi", color = DangerRed)
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                placeholder = { Text("0", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
                                 singleLine = true,
-                                shape = KelolaRadius.ShapeInput,
-                                colors = inputColors,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("input_product_price")
-                            )
-                        }
-
-                        // Estimasi Margin Keuntungan Box
-                        val isDark = isSystemInDarkTheme()
-                        val profitColor = if (profitPerUnit >= 0) SuccessGreen else DangerRed
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = KelolaRadius.ShapeInput,
-                            color = profitColor.copy(alpha = 0.12f)
-                        ) {
-                            Row(
+                                isError = sellingPriceError,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color(0xFFF1F5F9),
+                                    focusedContainerColor = Color.White,
+                                    unfocusedBorderColor = Color(0xFFE2E8F0),
+                                    focusedBorderColor = BrandPrimary,
+                                    focusedTextColor = BrandPrimary,
+                                    unfocusedTextColor = BrandPrimary
+                                ),
+                                textStyle = TextStyle(fontWeight = FontWeight.Bold, color = BrandPrimary),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = KelolaSpacing.Space3, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space2)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.TrendingUp,
-                                        contentDescription = null,
-                                        tint = profitColor,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Column {
-                                        Text(
-                                            text = "Estimasi Untung / Unit",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = FormatUtils.formatRupiah(profitPerUnit),
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = profitColor
-                                        )
-                                    }
-                                }
-
-                                if (costPrice > 0L) {
-                                    Surface(
-                                        shape = KelolaRadius.ShapeSmall,
-                                        color = if (isDark) (if (profitPerUnit >= 0) Color(0xFF0D3322) else Color(0xFF381515)) else profitColor
-                                    ) {
-                                        Text(
-                                            text = "$profitPercentage%",
-                                            color = if (isDark) profitColor else Color.White,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                }
-                            }
+                                    .height(48.dp)
+                                    .testTag("input_product_selling_price")
+                            )
                         }
                     }
-                }
-            }
 
-            // =========================================================================
-            // CARD 3: MANAJEMEN STOK & INVENTARIS
-            // =========================================================================
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
-                    shape = KelolaRadius.ShapeCard,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(KelolaSpacing.Space4),
-                        verticalArrangement = Arrangement.spacedBy(KelolaSpacing.Space3)
+                    // Grid 2 Kolom: Stok Awal & Batas Menipis
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "Inventaris & Peringatan Stok",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space2)
+                        // Stok Awal
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
+                            Text(
+                                text = "Stok Awal",
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF334155)
+                                )
+                            )
                             OutlinedTextField(
                                 value = stockText,
                                 onValueChange = { stockText = it.filter { c -> c.isDigit() } },
-                                label = { Text(if (isEditing) "Stok Saat Ini" else "Stok Awal") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                placeholder = { Text("0", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
                                 singleLine = true,
-                                shape = KelolaRadius.ShapeInput,
-                                colors = inputColors,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color(0xFFF1F5F9),
+                                    focusedContainerColor = Color.White,
+                                    unfocusedBorderColor = Color(0xFFE2E8F0),
+                                    focusedBorderColor = BrandPrimary,
+                                    focusedTextColor = Color(0xFF1E293B),
+                                    unfocusedTextColor = Color(0xFF1E293B)
+                                ),
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("input_product_stock")
+                                    .fillMaxWidth()
+                                    .height(48.dp)
                             )
+                        }
 
+                        // Batas Menipis
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Batas Menipis",
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF334155)
+                                )
+                            )
                             OutlinedTextField(
                                 value = minStockText,
                                 onValueChange = { minStockText = it.filter { c -> c.isDigit() } },
-                                label = { Text("Batas Min. Stok") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                placeholder = { Text("3", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
                                 singleLine = true,
-                                shape = KelolaRadius.ShapeInput,
-                                colors = inputColors,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        // Penyesuaian Cepat Stok
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(KelolaSpacing.Space2),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Tambah Cepat:",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            listOf(1, 5, 10, 50).forEach { inc ->
-                                Surface(
-                                    onClick = {
-                                        val current = stockText.toIntOrNull() ?: 0
-                                        stockText = (current + inc).toString()
-                                    },
-                                    shape = KelolaRadius.ShapeSmall,
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    modifier = Modifier.height(34.dp)
-                                ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier.padding(horizontal = 12.dp)
-                                    ) {
-                                        Text(
-                                            text = "+$inc",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // =========================================================================
-            // CARD 4: MASA SIMPAN & KADALUARSA
-            // =========================================================================
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
-                    shape = KelolaRadius.ShapeCard,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(KelolaSpacing.Space4),
-                        verticalArrangement = Arrangement.spacedBy(KelolaSpacing.Space3)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Default.CalendarMonth,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(KelolaSpacing.Space1))
-                                Text(
-                                    text = "Masa Simpan & Kadaluarsa",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-
-                            if (expirationDate != null) {
-                                TextButton(onClick = { expirationDate = null }) {
-                                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(14.dp), tint = DangerRed)
-                                    Spacer(modifier = Modifier.width(2.dp))
-                                    Text("Hapus", color = DangerRed, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = KelolaRadius.ShapeInput,
-                            color = if (expirationDate != null) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Row(
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = Color(0xFFF1F5F9),
+                                    focusedContainerColor = Color.White,
+                                    unfocusedBorderColor = Color(0xFFE2E8F0),
+                                    focusedBorderColor = BrandPrimary,
+                                    focusedTextColor = Color(0xFF1E293B),
+                                    unfocusedTextColor = Color(0xFF1E293B)
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = if (expirationDate != null) {
-                                            FormatUtils.formatDateTime(expirationDate!!)
-                                        } else {
-                                            "Tanpa tanggal kadaluarsa"
-                                        },
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (expirationDate != null) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (expirationDate != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = if (expirationDate != null) "Notifikasi akan muncul saat mendekati masa kadaluarsa" else "Pilih preset cepat atau tentukan waktu custom",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 11.sp
-                                    )
-                                }
-
-                                OutlinedButton(
-                                    onClick = { showCustomExpiryDialog = true },
-                                    shape = KelolaRadius.ShapeSmall,
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.primary
-                                    ),
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                    modifier = Modifier
-                                        .height(38.dp)
-                                        .testTag("button_open_custom_expiry_picker")
-                                ) {
-                                    Text(
-                                        text = if (expirationDate == null) "Pilih Custom" else "Ubah",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
+                                    .height(48.dp)
+                            )
                         }
+                    }
 
-                        // Presets
+                    // Satuan Barang
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            text = "Preset Cepat (Jam & Hari):",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 11.sp
+                            text = "Satuan Barang",
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF334155)
+                            )
                         )
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            val presets = listOf(
-                                "+1 Jam" to 1L * 3600000L,
-                                "+3 Jam" to 3L * 3600000L,
-                                "+6 Jam" to 6L * 3600000L,
-                                "+12 Jam" to 12L * 3600000L,
-                                "+1 Hari" to 1L * 86400000L,
-                                "+3 Hari" to 3L * 86400000L,
-                                "+7 Hari" to 7L * 86400000L,
-                                "+1 Bulan" to 30L * 86400000L,
-                                "+3 Bulan" to 90L * 86400000L,
-                                "+6 Bulan" to 180L * 86400000L,
-                                "+1 Tahun" to 365L * 86400000L
-                            )
-                            items(presets) { (label, duration) ->
-                                FilterChip(
-                                    selected = false,
-                                    onClick = {
-                                        expirationDate = System.currentTimeMillis() + duration
-                                    },
-                                    label = { Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium) },
-                                    shape = KelolaRadius.ShapeSmall,
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                        labelColor = MaterialTheme.colorScheme.onSurface
+                            items(units) { u ->
+                                val isSelected = unit == u
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = if (isSelected) BrandPrimary else Color(0xFFF1F5F9),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isSelected) BrandPrimary else Color.Transparent
                                     ),
-                                    modifier = Modifier.heightIn(min = 36.dp)
-                                )
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .clickable { unit = u }
+                                ) {
+                                    Text(
+                                        text = u,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isSelected) Color.White else Color(0xFF475569),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(KelolaSpacing.Space6))
+            // -------------------------------------------------------------
+            // CARD 2: MASA SIMPAN & KADALUARSA (Sama persis dengan AddEditProductScreen.tsx)
+            // -------------------------------------------------------------
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Header Card 2
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = BrandPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Masa Simpan & Kadaluarsa",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BrandPrimary
+                            )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.clickable {
+                                hasExpiry = !hasExpiry
+                                if (hasExpiry && expiryDate.isBlank()) {
+                                    setPresetDays(30)
+                                }
+                            }
+                        ) {
+                            Text(
+                                text = "Ada Kadaluarsa",
+                                fontSize = 11.sp,
+                                color = Color(0xFF64748B),
+                                fontWeight = FontWeight.Medium
+                            )
+                            Checkbox(
+                                checked = hasExpiry,
+                                onCheckedChange = { checked ->
+                                    hasExpiry = checked
+                                    if (checked && expiryDate.isBlank()) {
+                                        setPresetDays(30)
+                                    }
+                                },
+                                colors = CheckboxDefaults.colors(checkedColor = BrandPrimary)
+                            )
+                        }
+                    }
+
+                    if (hasExpiry) {
+                        HorizontalDivider(color = Color(0xFFF1F5F9))
+
+                        // Segmented Toggle: Tanggal Saja vs Tanggal & Jam
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Tanggal Saja
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (expiryMode == "DATE_ONLY") BrandPrimary else Color(0xFFF1F5F9),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (expiryMode == "DATE_ONLY") BrandPrimary else Color.Transparent
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(38.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { expiryMode = "DATE_ONLY" }
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarToday,
+                                        contentDescription = null,
+                                        tint = if (expiryMode == "DATE_ONLY") Color.White else Color(0xFF334155),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Tanggal Saja",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (expiryMode == "DATE_ONLY") Color.White else Color(0xFF334155)
+                                    )
+                                }
+                            }
+
+                            // Tanggal & Jam
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (expiryMode == "DATE_TIME") BrandPrimary else Color(0xFFF1F5F9),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (expiryMode == "DATE_TIME") BrandPrimary else Color.Transparent
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(38.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { expiryMode = "DATE_TIME" }
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = if (expiryMode == "DATE_TIME") Color.White else Color(0xFF334155),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Tanggal & Jam",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (expiryMode == "DATE_TIME") Color.White else Color(0xFF334155)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Date / Time Input Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            // Tanggal Kadaluarsa
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Tanggal Kadaluarsa",
+                                    style = TextStyle(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF475569)
+                                    )
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFF1F5F9),
+                                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(44.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { openDatePicker() }
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = expiryDate.ifBlank { "Pilih Tanggal" },
+                                            fontSize = 12.sp,
+                                            color = if (expiryDate.isNotBlank()) Color(0xFF1E293B) else Color(0xFF94A3B8)
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.CalendarToday,
+                                            contentDescription = null,
+                                            tint = Color(0xFF64748B),
+                                            modifier = Modifier.size(15.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Jam Spesifik (if DATE_TIME)
+                            if (expiryMode == "DATE_TIME") {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = "Jam Spesifik",
+                                        style = TextStyle(
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF475569)
+                                        )
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFFF1F5F9),
+                                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(44.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable { openTimePicker() }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(horizontal = 12.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = expiryTime.ifBlank { "00:00" },
+                                                fontSize = 12.sp,
+                                                color = Color(0xFF1E293B)
+                                            )
+                                            Icon(
+                                                imageVector = Icons.Default.Schedule,
+                                                contentDescription = null,
+                                                tint = Color(0xFF64748B),
+                                                modifier = Modifier.size(15.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Presets Cepat
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Preset Cepat:",
+                                style = TextStyle(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF64748B)
+                                )
+                            )
+                            val presets = listOf(
+                                "+3 Hari" to 3,
+                                "+7 Hari" to 7,
+                                "+14 Hari" to 14,
+                                "+1 Bulan" to 30,
+                                "+6 Bulan" to 180,
+                                "+1 Tahun" to 365
+                            )
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(presets) { (label, days) ->
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFFF1F5F9),
+                                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .clickable { setPresetDays(days) }
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF334155),
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Summary Notice
+                        if (expiryDate.isNotBlank()) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFEFF6FF),
+                                border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Otomatis tercatat rugi jika kadaluarsa: $expiryDate ${if (expiryMode == "DATE_TIME") "pukul $expiryTime" else "23:59"}",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF1E3A8A),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    TextButton(
+                                        onClick = {
+                                            hasExpiry = false
+                                            expiryDate = ""
+                                        },
+                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = "Hapus",
+                                            color = DangerRed,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // -------------------------------------------------------------
+            // 3. SUBMIT BUTTON (Sama persis dengan AddEditProductScreen.tsx)
+            // -------------------------------------------------------------
+            Button(
+                onClick = {
+                    if (name.isBlank()) {
+                        nameError = true
+                        return@Button
+                    }
+                    val sp = FormatUtils.parseRupiahInput(sellingPriceText)
+                    if (sp <= 0) {
+                        sellingPriceError = true
+                        return@Button
+                    }
+
+                    val cp = FormatUtils.parseRupiahInput(costPriceText)
+                    val stk = stockText.toIntOrNull() ?: 0
+                    val minStk = minStockText.toIntOrNull() ?: 3
+
+                    onSaveProduct(
+                        name.trim(),
+                        categoryId,
+                        cp,
+                        sp,
+                        stk,
+                        minStk,
+                        unit.trim(),
+                        calculateExpiryTimestamp()
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("button_save_product"),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BrandPrimary,
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (isEditing) "Perbarui Produk" else "Simpan Produk",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
             }
         }
-    }
-
-    if (showCustomExpiryDialog) {
-        CustomExpirationPickerDialog(
-            currentExpiration = expirationDate,
-            onConfirm = { expirationDate = it },
-            onClear = { expirationDate = null },
-            onDismiss = { showCustomExpiryDialog = false }
-        )
-    }
-
-    if (showAddCategoryPopup) {
-        AddCategoryDialog(
-            onSaveCategory = { catName ->
-                onAddCategoryCustom(catName) { newId ->
-                    categoryId = newId
-                }
-                showAddCategoryPopup = false
-            },
-            onDismiss = { showAddCategoryPopup = false }
-        )
     }
 }

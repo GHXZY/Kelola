@@ -6,6 +6,19 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Crop
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.zIndex
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -154,6 +167,22 @@ fun SettingsScreen(
     var showResetSettingsConfirm by remember { mutableStateOf(false) }
     var showResetAllDataConfirm by remember { mutableStateOf(false) }
 
+    val coroutineScope = rememberCoroutineScope()
+    var successMessage by remember { mutableStateOf<String?>(null) }
+    var hideJob by remember { mutableStateOf<Job?>(null) }
+
+    fun showSuccess(msg: String) {
+        hideJob?.cancel()
+        successMessage = msg
+        hideJob = coroutineScope.launch {
+            delay(2200)
+            if (successMessage == msg) {
+                successMessage = null
+            }
+        }
+    }
+
+
     // Photo picker for QRIS
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -201,8 +230,9 @@ fun SettingsScreen(
         unfocusedPrefixColor = MaterialTheme.colorScheme.onSurface
     )
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
+    Box(modifier = modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
         topBar = {
             Surface(
                 color = MaterialTheme.colorScheme.surface,
@@ -350,6 +380,7 @@ fun SettingsScreen(
                         Button(
                             onClick = {
                                 onSaveBusinessInfo(businessNameInput, addressInput, phoneInput)
+                                showSuccess("Informasi usaha berhasil disimpan!")
                             },
                             shape = KelolaRadius.ShapeInput,
                             colors = ButtonDefaults.buttonColors(
@@ -425,7 +456,10 @@ fun SettingsScreen(
                                     val isSelected = defaultPaymentMethod == method
                                     FilterChip(
                                         selected = isSelected,
-                                        onClick = { onSaveDefaultPaymentMethod(method) },
+                                        onClick = {
+                                            onSaveDefaultPaymentMethod(method)
+                                            showSuccess("Metode utama diubah ke $method")
+                                        },
                                         shape = KelolaRadius.ShapeSmall,
                                         label = {
                                             Text(
@@ -655,6 +689,7 @@ fun SettingsScreen(
                             onClick = {
                                 val amount = openingCapitalInput.toLongOrNull() ?: 0L
                                 onSaveOpeningCapital(amount)
+                                showSuccess("Modal awal kasir berhasil disimpan!")
                             },
                             shape = KelolaRadius.ShapeInput,
                             colors = ButtonDefaults.buttonColors(
@@ -719,7 +754,10 @@ fun SettingsScreen(
                         )
 
                         Button(
-                            onClick = { onSaveReceiptFooter(receiptFooterInput) },
+                            onClick = {
+                                onSaveReceiptFooter(receiptFooterInput)
+                                showSuccess("Pesan bawah struk berhasil disimpan!")
+                            },
                             shape = KelolaRadius.ShapeInput,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
@@ -785,7 +823,10 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(KelolaRadius.ShapeInput)
-                                    .clickable { onUpdateThemeMode(mode) }
+                                    .clickable {
+                                        onUpdateThemeMode(mode)
+                                        showSuccess("Tema tampilan berhasil diubah!")
+                                    }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
@@ -809,7 +850,10 @@ fun SettingsScreen(
                                     }
                                     RadioButton(
                                         selected = isSelected,
-                                        onClick = { onUpdateThemeMode(mode) },
+                                        onClick = {
+                                            onUpdateThemeMode(mode)
+                                            showSuccess("Tema tampilan berhasil diubah!")
+                                        },
                                         colors = RadioButtonDefaults.colors(
                                             selectedColor = MaterialTheme.colorScheme.primary,
                                             unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -876,7 +920,10 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(KelolaRadius.ShapeInput)
-                                    .clickable { onSaveViewportWidth(widthValue) }
+                                    .clickable {
+                                        onSaveViewportWidth(widthValue)
+                                        showSuccess("Ukuran tampilan diubah ke $title")
+                                    }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
@@ -898,7 +945,10 @@ fun SettingsScreen(
                                     }
                                     RadioButton(
                                         selected = isSelected,
-                                        onClick = { onSaveViewportWidth(widthValue) },
+                                        onClick = {
+                                            onSaveViewportWidth(widthValue)
+                                            showSuccess("Ukuran tampilan diubah ke $title")
+                                        },
                                         colors = RadioButtonDefaults.colors(
                                             selectedColor = MaterialTheme.colorScheme.primary,
                                             unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1055,6 +1105,48 @@ fun SettingsScreen(
         }
     }
 
+    // Animated Success Floating Pill Banner
+    AnimatedVisibility(
+        visible = successMessage != null,
+        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        modifier = Modifier
+            .align(Alignment.TopCenter)
+            .statusBarsPadding()
+            .padding(top = 16.dp, start = 20.dp, end = 20.dp)
+            .zIndex(99f)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = com.example.ui.theme.SuccessGreen,
+            contentColor = Color.White,
+            shadowElevation = 8.dp,
+            modifier = Modifier
+                .clip(RoundedCornerShape(24.dp))
+                .clickable { successMessage = null }
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = successMessage ?: "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+        }
+    }
+} // Box closing
+
     // Confirmation Dialogs
     if (showDeleteQrisConfirm) {
         ConfirmationDialog(
@@ -1065,6 +1157,7 @@ fun SettingsScreen(
             onConfirm = {
                 showDeleteQrisConfirm = false
                 onDeleteQris()
+                showSuccess("Foto QRIS berhasil dihapus")
             },
             onDismiss = { showDeleteQrisConfirm = false }
         )
@@ -1079,6 +1172,7 @@ fun SettingsScreen(
             onConfirm = {
                 showResetSettingsConfirm = false
                 onResetSettingsOnly()
+                showSuccess("Pengaturan berhasil di-reset ke bawaan")
             },
             onDismiss = { showResetSettingsConfirm = false }
         )
@@ -1105,6 +1199,7 @@ fun SettingsScreen(
                 showCropDialog = false
                 rawBitmapForCrop = null
                 onSaveCroppedQris(cropped)
+                showSuccess("Kode QRIS berhasil disimpan!")
             },
             onDismiss = {
                 showCropDialog = false

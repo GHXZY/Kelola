@@ -63,6 +63,7 @@ import com.example.ui.theme.DangerContainer
 import com.example.ui.theme.DangerRed
 import com.example.ui.theme.GradientBrand
 import com.example.ui.theme.KelolaRadius
+import com.example.ui.theme.KelolaSpacing
 import com.example.ui.theme.KelolaTheme
 import com.example.ui.theme.PrimaryBlue
 import com.example.ui.theme.SuccessContainer
@@ -437,12 +438,12 @@ fun CartSheet(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // CTA Bayar: Gradient Brand, Radius 14px, Teks Putih
+                // CTA Bayar: Gradient Brand, Radius 12px, Teks Putih
                 Surface(
                     onClick = onProceedToPayment,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .height(KelolaSpacing.ButtonHeightCta)
                         .clip(KelolaRadius.ShapeInput)
                         .testTag("button_checkout_pay"),
                     shape = KelolaRadius.ShapeInput,
@@ -456,23 +457,24 @@ fun CartSheet(
                     ) {
                         Text(
                             text = "Bayar ${FormatUtils.formatRupiah(cart.total)}",
-                            fontSize = 15.sp,
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White,
                             maxLines = 1,
-                            softWrap = false
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Tombol Batalkan Pesanan (Soft Danger, Radius 14px, Tanpa Border)
+                // Tombol Batalkan Pesanan (Soft Danger, Radius 12px, Tanpa Border)
                 Surface(
                     onClick = { showCancelOrderConfirm = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .height(KelolaSpacing.ButtonHeightSecondary)
                         .testTag("button_cart_cancel_order_bottom"),
                     shape = KelolaRadius.ShapeInput,
                     color = DangerContainer
@@ -491,11 +493,12 @@ fun CartSheet(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Batalkan Pesanan",
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
                             color = DangerRed,
                             maxLines = 1,
-                            softWrap = false
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }

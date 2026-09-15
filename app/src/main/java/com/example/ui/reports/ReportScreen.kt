@@ -1,5 +1,10 @@
 package com.example.ui.reports
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,11 +50,12 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -129,6 +135,10 @@ fun ReportScreen(
     var transactionSearch by remember { mutableStateOf("") }
     var menuExpandedItemId by remember { mutableStateOf<Long?>(null) }
     var itemToDelete by remember { mutableStateOf<CashflowItem?>(null) }
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
 
     val filteredTransactions = remember(transactions, transactionSearch) {
         if (transactionSearch.isBlank()) transactions
@@ -182,31 +192,37 @@ fun ReportScreen(
     ) {
         item {
             Spacer(modifier = Modifier.height(4.dp))
-            // Period Filter Chips (Radius 10px, Tanpa Border)
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = fadeIn(animationSpec = tween(300, delayMillis = 0, easing = FastOutSlowInEasing)) +
+                        slideInVertically(animationSpec = tween(300, delayMillis = 0, easing = FastOutSlowInEasing)) { it / 6 }
             ) {
-                items(periods) { period ->
-                    val isSelected = period == selectedPeriod
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onSelectPeriod(period) },
-                        shape = KelolaRadius.ShapeSmall,
-                        label = {
-                            Text(
-                                text = period,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else BorderLight)
-                    )
+                // Period Filter Chips (Radius 10px, Tanpa Border)
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(periods) { period ->
+                        val isSelected = period == selectedPeriod
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onSelectPeriod(period) },
+                            shape = KelolaRadius.ShapeSmall,
+                            label = {
+                                Text(
+                                    text = period,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else BorderLight)
+                        )
+                    }
                 }
             }
         }
@@ -214,73 +230,97 @@ fun ReportScreen(
         // Key Metric Summary Cards
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(animationSpec = tween(300, delayMillis = 60, easing = FastOutSlowInEasing)) +
+                            slideInVertically(animationSpec = tween(300, delayMillis = 60, easing = FastOutSlowInEasing)) { it / 6 }
                 ) {
-                    SummaryCard(
-                        title = "Penjualan",
-                        value = FormatUtils.formatRupiah(reportStats.totalSales),
-                        subtitle = "${reportStats.transactionCount} transaksi",
-                        icon = Icons.AutoMirrored.Filled.TrendingUp,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        SummaryCard(
+                            title = "Penjualan",
+                            value = FormatUtils.formatRupiah(reportStats.totalSales),
+                            subtitle = "${reportStats.transactionCount} transaksi",
+                            icon = Icons.AutoMirrored.Filled.TrendingUp,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
 
-                    SummaryCard(
-                        title = "Keuntungan (Kotor)",
-                        value = FormatUtils.formatRupiah(reportStats.grossProfit),
-                        subtitle = "${reportStats.itemsSold} item terjual",
-                        icon = Icons.Default.MonetizationOn,
-                        contentColor = SuccessGreen,
-                        modifier = Modifier.weight(1f)
-                    )
+                        SummaryCard(
+                            title = "Keuntungan (Kotor)",
+                            value = FormatUtils.formatRupiah(reportStats.grossProfit),
+                            subtitle = "${reportStats.itemsSold} item terjual",
+                            icon = Icons.Default.MonetizationOn,
+                            contentColor = SuccessGreen,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(animationSpec = tween(300, delayMillis = 120, easing = FastOutSlowInEasing)) +
+                            slideInVertically(animationSpec = tween(300, delayMillis = 120, easing = FastOutSlowInEasing)) { it / 6 }
                 ) {
-                    SummaryCard(
-                        title = "Pengeluaran",
-                        value = FormatUtils.formatRupiah(reportStats.totalExpense),
-                        subtitle = "Beban usaha",
-                        icon = Icons.Default.TrendingDown,
-                        contentColor = DangerRed,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        SummaryCard(
+                            title = "Pengeluaran",
+                            value = FormatUtils.formatRupiah(reportStats.totalExpense),
+                            subtitle = "Beban usaha",
+                            icon = Icons.Default.TrendingDown,
+                            contentColor = DangerRed,
+                            modifier = Modifier.weight(1f)
+                        )
 
-                    SummaryCard(
-                        title = "Arus Kas Bersih",
-                        value = FormatUtils.formatRupiah(reportStats.netCashflow),
-                        subtitle = "Pemasukan - beban",
-                        icon = Icons.Default.Receipt,
-                        contentColor = SecondaryTeal,
-                        modifier = Modifier.weight(1f)
-                    )
+                        SummaryCard(
+                            title = "Arus Kas Bersih",
+                            value = FormatUtils.formatRupiah(reportStats.netCashflow),
+                            subtitle = "Pemasukan - beban",
+                            icon = Icons.Default.Receipt,
+                            contentColor = SecondaryTeal,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }
 
         // Subtabs: Ringkasan & Tren, Transaksi, Arus Kas
         item {
-            PrimaryTabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = Color.Transparent,
-                divider = {}
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = fadeIn(animationSpec = tween(300, delayMillis = 180, easing = FastOutSlowInEasing)) +
+                        slideInVertically(animationSpec = tween(300, delayMillis = 180, easing = FastOutSlowInEasing)) { it / 6 }
             ) {
-                tabTitles.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = {
-                            Text(
-                                text = title,
-                                fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Medium,
-                                color = if (selectedTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    )
+                ScrollableTabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    edgePadding = 0.dp,
+                    divider = {}
+                ) {
+                    tabTitles.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            modifier = Modifier.height(48.dp),
+                            text = {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Medium,
+                                    color = if (selectedTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }

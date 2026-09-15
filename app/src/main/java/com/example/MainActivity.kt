@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -61,6 +64,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.draw.blur
+
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -77,10 +83,20 @@ import com.example.ui.MainViewModel
 import com.example.ui.cashier.CartSheet
 import com.example.ui.cashier.CashierScreen
 import com.example.ui.cashier.PaymentDialog
+import com.example.ui.cashier.PaymentScreen
 import com.example.ui.cashier.TransactionSuccessDialog
 import com.example.ui.components.ConfirmationDialog
 import com.example.ui.components.KelolaLogoBadge
 import com.example.ui.debts.DebtsScreen
+
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import com.example.ui.notes.NotesScreen
+import com.example.ui.debts.DebtPaymentScreen
+
 import com.example.ui.debts.SettleDebtDialog
 import com.example.ui.home.HomeScreen
 import com.example.ui.pending_change.PendingChangesScreen
@@ -131,29 +147,46 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeMode by viewModel.themeMode.collectAsState()
             val viewportWidth by viewModel.viewportWidth.collectAsState()
-            val maxDeviceWidth = when (viewportWidth) {
-                "360dp" -> 360.dp
-                "430dp" -> 430.dp
-                else -> 412.dp
+            val targetWidth = when (viewportWidth) {
+                "360dp" -> 360f
+                "430dp" -> 430f
+                else -> 412f
             }
             val isDark = when (themeMode) {
                 "DARK" -> true
                 "LIGHT" -> false
                 else -> isSystemInDarkTheme()
             }
+
+            val configuration = LocalConfiguration.current
+            val screenWidthDp = configuration.screenWidthDp.toFloat()
+            val currentDensity = LocalDensity.current
+
+            // Responsive Viewport Density Scaling:
+            // Scaled so targetWidth fills the device screen width proportionally
+            val scaleFactor = (screenWidthDp / targetWidth).coerceIn(0.75f, 1.45f)
+            val customDensity = Density(
+                density = currentDensity.density * scaleFactor,
+                fontScale = currentDensity.fontScale * scaleFactor
+            )
+
             MyApplicationTheme(darkTheme = isDark) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                    contentAlignment = Alignment.TopCenter
-                ) {
+                CompositionLocalProvider(LocalDensity provides customDensity) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .widthIn(max = maxDeviceWidth)
+                            .background(MaterialTheme.colorScheme.background),
+                        contentAlignment = Alignment.TopCenter
                     ) {
-                        MainApp(viewModel = viewModel)
+                        Box(
+                            modifier = if (screenWidthDp > 600f) {
+                                Modifier.fillMaxHeight().width(targetWidth.dp)
+                            } else {
+                                Modifier.fillMaxSize()
+                            }
+                        ) {
+                            MainApp(viewModel = viewModel)
+                        }
                     }
                 }
             }
@@ -170,9 +203,24 @@ fun MainApp(viewModel: MainViewModel) {
     // Navigation State
     val screens = listOf(Screen.Home, Screen.Cashier, Screen.Products, Screen.Reports)
     var selectedScreenIndex by remember { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState(initialPage = 0) { screens.size }
     var isShowingDebts by remember { mutableStateOf(false) }
     var isShowingPendingChanges by remember { mutableStateOf(false) }
     val currentScreen = screens[selectedScreenIndex]
+
+    // Sync pager swipe to selectedScreenIndex
+    LaunchedEffect(pagerState.currentPage) {
+        if (!isShowingDebts) {
+            selectedScreenIndex = pagerState.currentPage
+        }
+    }
+
+    // Sync selectedScreenIndex changes (clicks, programmatic) to pagerState
+    LaunchedEffect(selectedScreenIndex) {
+        if (pagerState.currentPage != selectedScreenIndex) {
+            pagerState.animateScrollToPage(selectedScreenIndex)
+        }
+    }
 
     // State from ViewModel
     val businessName by viewModel.businessName.collectAsState()
@@ -201,6 +249,10 @@ fun MainApp(viewModel: MainViewModel) {
     val reportStats by viewModel.reportStats.collectAsState()
     val reportPeriod by viewModel.reportPeriod.collectAsState()
     val lastCompletedTx by viewModel.lastCompletedTx.collectAsState()
+    val notes by viewModel.notes.collectAsState()
+
+    var isShowingNotes by remember { mutableStateOf(false) }
+    var debtForPaymentScreen by remember { mutableStateOf<DebtEntity?>(null) }
 
     // Dialog & Sheet States
     var showCartSheet by remember { mutableStateOf(false) }
@@ -210,6 +262,7 @@ fun MainApp(viewModel: MainViewModel) {
 
     var showPaymentDialog by remember { mutableStateOf(false) }
     val paymentSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var isShowingPaymentScreen by remember { mutableStateOf(false) }
 
     var debtToSettle by remember { mutableStateOf<DebtEntity?>(null) }
     var debtToDelete by remember { mutableStateOf<DebtEntity?>(null) }
@@ -257,6 +310,18 @@ fun MainApp(viewModel: MainViewModel) {
 
     BackHandler(enabled = isShowingPendingChanges) {
         isShowingPendingChanges = false
+    }
+
+    BackHandler(enabled = isShowingPaymentScreen) {
+        isShowingPaymentScreen = false
+    }
+
+    BackHandler(enabled = isShowingNotes) {
+        isShowingNotes = false
+    }
+
+    BackHandler(enabled = debtForPaymentScreen != null) {
+        debtForPaymentScreen = null
     }
 
     // Notification listener for Snackbar
@@ -335,6 +400,60 @@ fun MainApp(viewModel: MainViewModel) {
             },
             onNavigateBack = { isShowingSettings = false }
         )
+
+    } else if (isShowingNotes) {
+        NotesScreen(
+            notes = notes,
+            onSaveNote = { note -> viewModel.saveNote(note) },
+            onDeleteNote = { noteId -> viewModel.deleteNote(noteId) },
+            onNavigateBack = { isShowingNotes = false }
+        )
+    } else if (debtForPaymentScreen != null) {
+        DebtPaymentScreen(
+            debt = debtForPaymentScreen!!,
+            qrisImagePath = qrisImagePath,
+            qrisMerchantName = qrisMerchantName,
+            onConfirmSettle = { debtId, amount, method, note ->
+                viewModel.settleDebt(debtId, amount, method, note)
+                debtForPaymentScreen = null
+            },
+            onNavigateBack = { debtForPaymentScreen = null }
+        )
+    } else if (isShowingPromo) {
+        PromoScreen(
+            promos = promos,
+            products = products,
+            onSavePromo = { promo -> viewModel.savePromo(promo) },
+            onTogglePromoActive = { id, isActive -> viewModel.togglePromoActive(id, isActive) },
+            onDeletePromo = { id -> viewModel.deletePromo(id) },
+            onNavigateBack = { isShowingPromo = false }
+        )
+    } else if (isShowingPendingChanges) {
+        PendingChangesScreen(
+            changeRecords = changeRecords,
+            onMarkChangeGiven = { id -> viewModel.markChangeAsPaid(id) },
+            onNavigateBack = { isShowingPendingChanges = false }
+        )
+    } else if (isShowingPaymentScreen) {
+        PaymentScreen(
+            totalAmount = cart.total,
+            totalItemCount = cart.totalItemCount,
+            defaultPaymentMethod = defaultPaymentMethod,
+            qrisImagePath = qrisImagePath,
+            qrisMerchantName = qrisMerchantName,
+            onConfirmSale = { method, cash, customerName, customerPhone, debtNote, isChangePending, buyerNameForChange, changeNote ->
+                viewModel.processSale(
+                    method, cash, customerName, customerPhone, debtNote,
+                    isChangePending, buyerNameForChange, changeNote
+                ) { completedTx ->
+                    isShowingPaymentScreen = false
+                    if (method == "Bayar Nanti") {
+                        isShowingDebts = true
+                    }
+                }
+            },
+            onNavigateBack = { isShowingPaymentScreen = false }
+        )
     } else if (isShowingAddEditProduct) {
         AddEditProductScreen(
             initialProduct = productToEdit,
@@ -370,34 +489,10 @@ fun MainApp(viewModel: MainViewModel) {
                 productToEdit = null
             }
         )
-
-        if (showAddCategoryDialog) {
-            AddCategoryDialog(
-                onSaveCategory = { catName ->
-                    viewModel.addCategory(catName)
-                    showAddCategoryDialog = false
-                },
-                onDismiss = { showAddCategoryDialog = false }
-            )
-        }
-    } else if (isShowingPromo) {
-        PromoScreen(
-            promos = promos,
-            products = products,
-            onSavePromo = { promo -> viewModel.savePromo(promo) },
-            onTogglePromoActive = { id, isActive -> viewModel.togglePromoActive(id, isActive) },
-            onDeletePromo = { id -> viewModel.deletePromo(id) },
-            onNavigateBack = { isShowingPromo = false }
-        )
-    } else if (isShowingPendingChanges) {
-        PendingChangesScreen(
-            changeRecords = changeRecords,
-            onMarkChangeGiven = { id -> viewModel.markChangeAsPaid(id) },
-            onNavigateBack = { isShowingPendingChanges = false }
-        )
     } else {
         Scaffold(
-        topBar = {
+            modifier = Modifier.fillMaxSize(),
+                topBar = {
             Surface(
                 color = MaterialTheme.colorScheme.background,
                 modifier = Modifier.fillMaxWidth()
@@ -504,6 +599,9 @@ fun MainApp(viewModel: MainViewModel) {
                             onClick = {
                                 isShowingDebts = false
                                 selectedScreenIndex = index
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
                             },
                             icon = {
                                 if (screen == Screen.Cashier && cart.totalItemCount > 0) {
@@ -569,7 +667,7 @@ fun MainApp(viewModel: MainViewModel) {
             if (isShowingDebts) {
                 DebtsScreen(
                     debts = debts,
-                    onSettleDebt = { debt -> debtToSettle = debt },
+                    onSettleDebt = { debt -> debtForPaymentScreen = debt },
                     onDeleteDebt = { debt -> debtToDelete = debt },
                     onEditDebtItems = { debt ->
                         coroutineScope.launch {
@@ -589,122 +687,132 @@ fun MainApp(viewModel: MainViewModel) {
                     }
                 )
             } else {
-                when (currentScreen) {
-                    Screen.Home -> {
-                        HomeScreen(
-                            stats = dashboardStats,
-                            businessName = businessName,
-                            openingCapital = openingCapital,
-                            onNavigateToCashier = { selectedScreenIndex = 1 },
-                            onNavigateToDebts = { isShowingDebts = true },
-                            onNavigateToPendingChanges = { isShowingPendingChanges = true },
-                            onOpenAddProduct = {
-                                productToEdit = null
-                                isShowingAddEditProduct = true
-                            },
-                            onOpenAddExpense = { showAddExpenseDialog = true },
-                            onOpenRestock = { prod ->
-                                productToRestock = prod
-                                showRestockDialog = true
-                            },
-                            onSelectTransaction = { tx ->
-                                coroutineScope.launch {
-                                    selectedTxItems = viewModel.getTransactionItemsForDetail(tx.id)
-                                    selectedTxForDetail = tx
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    userScrollEnabled = true
+                ) { page ->
+                    when (screens[page]) {
+                        Screen.Home -> {
+                            HomeScreen(
+                                stats = dashboardStats,
+                                businessName = businessName,
+                                openingCapital = openingCapital,
+                                onNavigateToCashier = { selectedScreenIndex = 1 },
+                                onNavigateToDebts = { isShowingDebts = true },
+                                onNavigateToPendingChanges = { isShowingPendingChanges = true },
+                                onOpenAddProduct = {
+                                    productToEdit = null
+                                    isShowingAddEditProduct = true
+                                },
+                                onOpenAddExpense = { showAddExpenseDialog = true },
+                                onOpenRestock = { prod ->
+                                    productToRestock = prod
+                                    showRestockDialog = true
+                                },
+                                onSelectTransaction = { tx ->
+                                    coroutineScope.launch {
+                                        selectedTxItems = viewModel.getTransactionItemsForDetail(tx.id)
+                                        selectedTxForDetail = tx
+                                    }
+                                },
+                                onMarkChangeGiven = { changeId ->
+                                    viewModel.markChangeAsPaid(changeId)
+                                },
+                                onSettleDebt = { debt ->
+                                    debtForPaymentScreen = debt
+                                },
+                                onOpenNotes = {
+                                    isShowingNotes = true
+                                },
+                                onEditDebtItems = { debt ->
+                                    coroutineScope.launch {
+                                        selectedTxItems = viewModel.getTransactionItemsForDetail(debt.transactionId)
+                                        debtItemsForEdit = selectedTxItems
+                                        debtToEditItems = debt
+                                    }
                                 }
-                            },
-                            onMarkChangeGiven = { changeId ->
-                                viewModel.markChangeAsPaid(changeId)
-                            },
-                            onSettleDebt = { debt ->
-                                debtToSettle = debt
-                            },
-                            onEditDebtItems = { debt ->
-                                coroutineScope.launch {
-                                    selectedTxItems = viewModel.getTransactionItemsForDetail(debt.transactionId)
-                                    debtItemsForEdit = selectedTxItems
-                                    debtToEditItems = debt
-                                }
-                            }
-                        )
-                    }
-                    Screen.Cashier -> {
-                        CashierScreen(
-                            products = products,
-                            categories = categories,
-                            cart = cart,
-                            onAddToCart = { viewModel.addToCart(it) },
-                            onUpdateQuantity = { prodId, qty -> viewModel.updateCartQuantity(prodId, qty) },
-                            onRemoveFromCart = { viewModel.removeFromCart(it) },
-                            onClearCart = { viewModel.clearCart() },
-                            onOpenCart = { showCartSheet = true }
-                        )
-                    }
-                    Screen.Debts -> {
-                        // Debts handled when isShowingDebts = true
-                    }
-                    Screen.Products -> {
-                        ProductScreen(
-                            products = products,
-                            categories = categories,
-                            onOpenAddProduct = {
-                                productToEdit = null
-                                isShowingAddEditProduct = true
-                            },
-                            onEditProduct = { prod ->
-                                productToEdit = prod
-                                isShowingAddEditProduct = true
-                            },
-                            onRestockProduct = { prod ->
-                                productToRestock = prod
-                                showRestockDialog = true
-                            },
-                            onReduceStockProduct = { prod ->
-                                productToReduce = prod
-                                showReduceStockDialog = true
-                            },
-                            onDeleteProduct = { prod ->
-                                productToDelete = prod
-                                showDeleteProductConfirm = true
-                            },
-                            onNavigateToCashier = { selectedScreenIndex = 1 },
-                            onOpenAddExpense = { showAddExpenseDialog = true },
-                            onOpenPromo = { isShowingPromo = true }
-                        )
-                    }
-                    Screen.Reports -> {
-                        ReportScreen(
-                            reportStats = reportStats,
-                            selectedPeriod = reportPeriod,
-                            onSelectPeriod = { viewModel.setReportPeriod(it) },
-                            transactions = transactions,
-                            expenses = expenses,
-                            incomes = incomes,
-                            openingCapital = openingCapital,
-                            previousSales = previousSales,
-                            previousSalesDate = previousSalesDate,
-                            previousSalesNote = previousSalesNote,
-                            onSelectTransaction = { tx ->
-                                coroutineScope.launch {
-                                    selectedTxItems = viewModel.getTransactionItemsForDetail(tx.id)
-                                    selectedTxForDetail = tx
-                                }
-                            },
-                            onOpenAddExpense = {
-                                expenseToEdit = null
-                                showAddExpenseDialog = true
-                            },
-                            onEditExpense = { exp ->
-                                expenseToEdit = exp
-                                showAddExpenseDialog = true
-                            },
-                            onDeleteExpense = { viewModel.deleteExpense(it) },
-                            onDeleteTransaction = { viewModel.deleteTransaction(it) }
-                        )
+                            )
+                        }
+                        Screen.Cashier -> {
+                            CashierScreen(
+                                products = products,
+                                categories = categories,
+                                cart = cart,
+                                onAddToCart = { viewModel.addToCart(it) },
+                                onUpdateQuantity = { prodId, qty -> viewModel.updateCartQuantity(prodId, qty) },
+                                onRemoveFromCart = { viewModel.removeFromCart(it) },
+                                onClearCart = { viewModel.clearCart() },
+                                onOpenCart = { showCartSheet = true }
+                            )
+                        }
+                        Screen.Debts -> {
+                            // Debts handled when isShowingDebts = true
+                        }
+                        Screen.Products -> {
+                            ProductScreen(
+                                products = products,
+                                categories = categories,
+                                onOpenAddProduct = {
+                                    productToEdit = null
+                                    isShowingAddEditProduct = true
+                                },
+                                onEditProduct = { prod ->
+                                    productToEdit = prod
+                                    isShowingAddEditProduct = true
+                                },
+                                onRestockProduct = { prod ->
+                                    productToRestock = prod
+                                    showRestockDialog = true
+                                },
+                                onReduceStockProduct = { prod ->
+                                    productToReduce = prod
+                                    showReduceStockDialog = true
+                                },
+                                onDeleteProduct = { prod ->
+                                    productToDelete = prod
+                                    showDeleteProductConfirm = true
+                                },
+                                onNavigateToCashier = { selectedScreenIndex = 1 },
+                                onOpenAddExpense = { showAddExpenseDialog = true },
+                                onOpenPromo = { isShowingPromo = true }
+                            )
+                        }
+                        Screen.Reports -> {
+                            ReportScreen(
+                                reportStats = reportStats,
+                                selectedPeriod = reportPeriod,
+                                onSelectPeriod = { viewModel.setReportPeriod(it) },
+                                transactions = transactions,
+                                expenses = expenses,
+                                incomes = incomes,
+                                openingCapital = openingCapital,
+                                previousSales = previousSales,
+                                previousSalesDate = previousSalesDate,
+                                previousSalesNote = previousSalesNote,
+                                onSelectTransaction = { tx ->
+                                    coroutineScope.launch {
+                                        selectedTxItems = viewModel.getTransactionItemsForDetail(tx.id)
+                                        selectedTxForDetail = tx
+                                    }
+                                },
+                                onOpenAddExpense = {
+                                    expenseToEdit = null
+                                    showAddExpenseDialog = true
+                                },
+                                onEditExpense = { exp ->
+                                    expenseToEdit = exp
+                                    showAddExpenseDialog = true
+                                },
+                                onDeleteExpense = { viewModel.deleteExpense(it) },
+                                onDeleteTransaction = { viewModel.deleteTransaction(it) }
+                            )
+                        }
                     }
                 }
             }
         }
+
     }
 
     // --- Modal Sheets & Dialogs ---
@@ -723,7 +831,7 @@ fun MainApp(viewModel: MainViewModel) {
                 coroutineScope.launch {
                     cartSheetState.hide()
                     showCartSheet = false
-                    showPaymentDialog = true
+                    isShowingPaymentScreen = true
                 }
             },
             onDismiss = { showCartSheet = false }

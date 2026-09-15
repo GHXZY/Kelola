@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Aps>
+	<Group>
+		<Page Width="324" Height="324" PaperTray="0">
+			<Canvas>
+				<Canvas>
+					<Clip>
+						<Path FillMode="Winding">
+							<PathFigure IsClosed="True">
+								<PolyLine LineColor="#FF000000">
+									<Point X="0" Y="324" />
+									<Point X="0" Y="0" />
+								</PolyLine>
+								<PolyLine LineColor="#FF000000">
+									<Point X="0" Y="0" />
+									<Point X="324" Y="0" />
+								</PolyLine>
+								<PolyLine LineColor="#FF000000">
+									<Point X="324" Y="0" />
+									<Point X="324" Y="324" />
+								</PolyLine>
+								<PolyLine LineColor="#FF000000">
+									<Point X="324" Y="324" />
+									<Point X="0" Y="324" />
+								</PolyLine>
+							</PathFigure>
+						</Path>
+					</Clip>
+					<Path FillMode="Winding" RenderTransform="1 0 0 -1 0 324">
+						<Brush>
+							<TextureBrush ResourceId="1" Transform="1 -0 0 1 20.25 19.75" WrapMode="Tile" Opacity="1">
+								<ImageArea X="0" Y="0" Width="0" Height="0" />
+							</TextureBrush>
+						</Brush>
+						<PathFigure IsClosed="True">
+							<PolyLine LineColor="#FF000000">
+								<Point X="20.25" Y="303.75" />
+								<Point X="20.25" Y="303.75" />
+							</PolyLine>
+							<PolyLine LineColor="#FF000000">
+								<Point X="20.25" Y="303.75" />
+								<Point X="303.75" Y="303.75" />
+							</PolyLine>
+							<PolyLine LineColor="#FF000000">
+								<Point X="303.75" Y="303.75" />
+								<Point X="303.75" Y="20.25" />
+							</PolyLine>
+							<PolyLine LineColor="#FF000000">
+								<Point X="303.75" Y="20.25" />
+								<Point X="20.25" Y="20.25" />
+							</PolyLine>
+						</PathFigure>
+					</Path>
+				</Canvas>
+			</Canvas>
+		</Page>
+	</Group>
+	<Resources>
+		<Resource Id="1">iVBORw0KGgoAAAANSUhEUgAAARwAAAEcCAYAAAAV9AvgAAAACXBIWXMAAAsSAAALEgHS3X78AAABUElEQVR4nOzBMQEAAADCoPVPbQ0PoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIBHAwAA//8P9X54AAAABklEQVQDAO2YAAEWcCtVAAAAAElFTkSuQmCC</Resource>
+	</Resources>
+</Aps>
