@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 data class CartItem(
     val product: ProductEntity,
@@ -66,6 +68,13 @@ data class TopProductSummary(
 data class DailySalesStat(
     val dayLabel: String,
     val amount: Long
+)
+
+data class BankAccount(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val bankName: String,
+    val accountName: String,
+    val accountNumber: String
 )
 
 data class DashboardStats(
@@ -104,11 +113,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: PosRepository
     private val prefs = application.getSharedPreferences("kelola_settings", Context.MODE_PRIVATE)
 
+    // --- Donation Dialog ---
+    private val _showDonationDialog = MutableStateFlow(false)
+    val showDonationDialog: StateFlow<Boolean> = _showDonationDialog.asStateFlow()
+
+    fun checkAndTriggerDonationDialog() {
+        val lastShown = prefs.getLong("last_donation_popup_shown_time", 0L)
+        val now = System.currentTimeMillis()
+        val fiveHoursMs = 5 * 60 * 60 * 1000L // 5 Jam
+        if (lastShown == 0L || (now - lastShown) >= fiveHoursMs) {
+            _showDonationDialog.value = true
+            prefs.edit().putLong("last_donation_popup_shown_time", now).apply()
+        }
+    }
+
+    fun dismissDonationDialog() {
+        _showDonationDialog.value = false
+    }
+
     init {
         val db = AppDatabase.getDatabase(application, viewModelScope)
         repository = PosRepository(db.posDao())
         viewModelScope.launch {
             repository.processExpiredProducts()
+        }
+        viewModelScope.launch {
+            checkAndTriggerDonationDialog()
+            while (isActive) {
+                delay(15 * 60 * 1000L) // Periksa berkala tiap 15 menit
+                checkAndTriggerDonationDialog()
+            }
         }
     }
 
@@ -137,10 +171,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "SYSTEM") ?: "SYSTEM") // SYSTEM, LIGHT, DARK
     val themeMode: StateFlow<String> = _themeMode.asStateFlow()
 
+    private val _colorTheme = MutableStateFlow(prefs.getString("color_theme", "DEFAULT") ?: "DEFAULT") // DEFAULT, PINK, COKLAT, ORANGE
+    val colorTheme: StateFlow<String> = _colorTheme.asStateFlow()
+
     private val _viewportWidth = MutableStateFlow(prefs.getString("viewport_width", "412dp") ?: "412dp")
     val viewportWidth: StateFlow<String> = _viewportWidth.asStateFlow()
 
-    private val _defaultPaymentMethod = MutableStateFlow(prefs.getString("default_payment_method", "Tunai") ?: "Tunai")
+    private val _defaultPaymentMethod = MutableStateFlow(
+        (prefs.getString("default_payment_method", "Tunai") ?: "Tunai").let {
+            if (it.equals("Emoney", ignoreCase = true)) "E-Wallet" else it
+        }
+    )
     val defaultPaymentMethod: StateFlow<String> = _defaultPaymentMethod.asStateFlow()
 
     private val _openingCapital = MutableStateFlow(prefs.getLong("opening_capital", 0L))
@@ -170,9 +211,90 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateDefaultPaymentMethod(method: String) {
-        val clean = if (method == "QRIS") "QRIS" else "Tunai"
+        val clean = when {
+            method.equals("QRIS", ignoreCase = true) -> "QRIS"
+            method.equals("Transfer", ignoreCase = true) -> "Transfer"
+            method.equals("E-Wallet", ignoreCase = true) || method.equals("Emoney", ignoreCase = true) -> "E-Wallet"
+            else -> "Tunai"
+        }
         _defaultPaymentMethod.value = clean
         prefs.edit().putString("default_payment_method", clean).apply()
+    }
+
+    private fun loadBankAccounts(): List<BankAccount> {
+        val jsonStr = prefs.getString("bank_accounts_json", "[]") ?: "[]"
+        val list = mutableListOf<BankAccount>()
+        try {
+            val array = JSONArray(jsonStr)
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                list.add(
+                    BankAccount(
+                        id = obj.optString("id", java.util.UUID.randomUUID().toString()),
+                        bankName = obj.optString("bankName", ""),
+                        accountName = obj.optString("accountName", ""),
+                        accountNumber = obj.optString("accountNumber", "")
+                    )
+                )
+            }
+        } catch (_: Exception) {}
+        return list
+    }
+
+    private val _bankAccounts = MutableStateFlow<List<BankAccount>>(loadBankAccounts())
+    val bankAccounts: StateFlow<List<BankAccount>> = _bankAccounts.asStateFlow()
+
+    fun addBankAccount(bankName: String, accountName: String, accountNumber: String): Boolean {
+        val current = _bankAccounts.value.toMutableList()
+        if (current.size >= 5) {
+            viewModelScope.launch {
+                _userMessage.emit("Maksimal 5 akun rekening transfer yang dapat didaftarkan.")
+            }
+            return false
+        }
+        val trimmedBank = bankName.trim()
+        val trimmedAccName = accountName.trim()
+        val trimmedAccNum = accountNumber.trim()
+        if (trimmedBank.isBlank() || trimmedAccNum.isBlank()) {
+            viewModelScope.launch {
+                _userMessage.emit("Nama Bank dan Nomor Rekening wajib diisi.")
+            }
+            return false
+        }
+
+        val newAcc = BankAccount(
+            bankName = trimmedBank,
+            accountName = trimmedAccName,
+            accountNumber = trimmedAccNum
+        )
+        current.add(newAcc)
+        saveBankAccountsInternal(current)
+        viewModelScope.launch {
+            _userMessage.emit("Rekening $trimmedBank berhasil ditambahkan.")
+        }
+        return true
+    }
+
+    fun removeBankAccount(id: String) {
+        val current = _bankAccounts.value.filter { it.id != id }
+        saveBankAccountsInternal(current)
+        viewModelScope.launch {
+            _userMessage.emit("Rekening berhasil dihapus.")
+        }
+    }
+
+    private fun saveBankAccountsInternal(list: List<BankAccount>) {
+        val array = JSONArray()
+        list.take(5).forEach {
+            val obj = JSONObject()
+            obj.put("id", it.id)
+            obj.put("bankName", it.bankName)
+            obj.put("accountName", it.accountName)
+            obj.put("accountNumber", it.accountNumber)
+            array.put(obj)
+        }
+        prefs.edit().putString("bank_accounts_json", array.toString()).apply()
+        _bankAccounts.value = list.take(5)
     }
 
     fun updateOpeningCapital(amount: Long) {
@@ -328,7 +450,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _previousSalesDate.value = ""
             _previousSalesNote.value = ""
             _themeMode.value = "SYSTEM"
+            _colorTheme.value = "DEFAULT"
             _expWarningDays.value = 7
+            _bankAccounts.value = emptyList()
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                 _userMessage.emit("Pengaturan berhasil direset ke bawaan.")
                 onComplete()
@@ -371,6 +495,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun updateThemeMode(mode: String) {
         _themeMode.value = mode
         prefs.edit().putString("theme_mode", mode).apply()
+    }
+
+    fun updateColorTheme(themeKey: String) {
+        val validKey = when (themeKey.uppercase()) {
+            "PINK" -> "PINK"
+            "COKLAT" -> "COKLAT"
+            "ORANGE" -> "ORANGE"
+            else -> "DEFAULT"
+        }
+        _colorTheme.value = validKey
+        prefs.edit().putString("color_theme", validKey).apply()
     }
 
     // --- Database Streams ---
@@ -1149,6 +1284,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     put("previousSalesDate", _previousSalesDate.value)
                     put("previousSalesNote", _previousSalesNote.value)
                     put("themeMode", _themeMode.value)
+                    put("colorTheme", _colorTheme.value)
                     put("expWarningDays", _expWarningDays.value)
                 }
                 root.put("settings", settingsObj)

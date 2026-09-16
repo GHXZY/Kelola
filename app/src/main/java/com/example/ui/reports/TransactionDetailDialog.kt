@@ -16,11 +16,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +57,8 @@ fun TransactionDetailDialog(
     items: List<TransactionItemEntity>,
     onCancelTransaction: () -> Unit,
     onDeleteTransaction: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onShareReceipt: ((TransactionEntity, List<TransactionItemEntity>) -> Unit)? = null
 ) {
     val totalCost = items.sumOf { it.costPriceSnapshot * it.quantity }
     val grossProfit = items.sumOf { it.profit }
@@ -86,8 +90,17 @@ fun TransactionDetailDialog(
                     )
                 }
 
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Tutup", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (onShareReceipt != null) {
+                    IconButton(
+                        onClick = { onShareReceipt(transaction, items) },
+                        modifier = Modifier.testTag("button_share_receipt_pdf")
+                    ) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Bagikan Struk",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         },
@@ -115,6 +128,7 @@ fun TransactionDetailDialog(
                         color = when (transaction.status) {
                             "COMPLETED" -> SuccessContainer
                             "UNPAID" -> WarningContainer
+                            "CANCELLED" -> MaterialTheme.colorScheme.surfaceVariant
                             else -> MaterialTheme.colorScheme.surfaceVariant
                         }
                     ) {
@@ -122,96 +136,106 @@ fun TransactionDetailDialog(
                             text = when (transaction.status) {
                                 "COMPLETED" -> "Selesai"
                                 "UNPAID" -> "Belum Lunas"
-                                else -> "Dibatalkan"
-                            },
-                            color = when (transaction.status) {
-                                "COMPLETED" -> SuccessGreen
-                                "UNPAID" -> WarningAmber
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                "CANCELLED" -> "Dibatalkan"
+                                else -> transaction.status
                             },
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            fontWeight = FontWeight.Bold,
+                            color = when (transaction.status) {
+                                "COMPLETED" -> MaterialTheme.colorScheme.primary
+                                "UNPAID" -> WarningAmber
+                                "CANCELLED" -> DangerRed
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
                 }
 
                 Text(
-                    text = "Waktu: ${FormatUtils.formatDateTime(transaction.createdAt)}",
+                    text = "${FormatUtils.formatDate(transaction.createdAt)} • ${FormatUtils.formatTime(transaction.createdAt)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    text = "Metode Pembayaran: ${transaction.paymentMethod}",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
 
-                if (transaction.customerName.isNotBlank()) {
-                    Text(
-                        text = "Pelanggan: ${transaction.customerName}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Items list header
-                Text(
-                    text = "Barang yang Dibeli (${items.size})",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                items.forEach { item ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = KelolaRadius.ShapeSmall,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = item.productNameSnapshot,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "${item.quantity} x ${FormatUtils.formatRupiah(item.sellingPriceSnapshot)}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Text(
-                                text = FormatUtils.formatRupiah(item.subtotal),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Totals
+                // Payment Method & Buyer Info
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Subtotal", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(FormatUtils.formatRupiah(transaction.subtotal), color = MaterialTheme.colorScheme.onSurface)
+                    Text("Metode Pembayaran", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = transaction.paymentMethod,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                if (!transaction.customerName.isNullOrBlank()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Pelanggan", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = transaction.customerName,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                // Items List
+                Text(
+                    text = "Daftar Item (${items.size})",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                items.forEach { item ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = item.productNameSnapshot,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${item.quantity} x ${FormatUtils.formatRupiah(item.sellingPriceSnapshot)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = FormatUtils.formatRupiah(item.subtotal),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                // Financial Breakdown
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Subtotal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(FormatUtils.formatRupiah(transaction.subtotal), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 if (transaction.discount > 0) {
@@ -219,8 +243,8 @@ fun TransactionDetailDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Diskon", color = DangerRed)
-                        Text("- ${FormatUtils.formatRupiah(transaction.discount)}", color = DangerRed)
+                        Text("Diskon", style = MaterialTheme.typography.bodySmall, color = DangerRed)
+                        Text("-${FormatUtils.formatRupiah(transaction.discount)}", style = MaterialTheme.typography.bodySmall, color = DangerRed)
                     }
                 }
 
@@ -228,29 +252,35 @@ fun TransactionDetailDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Total Akhir", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Text(
-                        FormatUtils.formatRupiah(transaction.total),
+                        text = "Total Tagihan",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = FormatUtils.formatRupiah(transaction.total),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
 
-                if (transaction.paymentMethod == "Tunai") {
+                // Payment & Change details (for cash)
+                if (transaction.paymentMethod == "Tunai" && transaction.cashReceived > 0) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Uang Diterima", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(FormatUtils.formatRupiah(transaction.cashReceived), color = MaterialTheme.colorScheme.onSurface)
+                        Text("Uang Diterima", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(FormatUtils.formatRupiah(transaction.cashReceived), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Kembalian", color = SuccessGreen, fontWeight = FontWeight.Medium)
-                        Text(FormatUtils.formatRupiah(transaction.change), color = SuccessGreen, fontWeight = FontWeight.Bold)
+                        Text("Kembalian", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(FormatUtils.formatRupiah(transaction.change), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
@@ -287,32 +317,57 @@ fun TransactionDetailDialog(
             }
         },
         confirmButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (transaction.status != "CANCELLED") {
-                    Surface(
-                        onClick = onCancelTransaction,
-                        shape = KelolaRadius.ShapeInput,
-                        color = DangerRed.copy(alpha = 0.12f),
-                        modifier = Modifier.height(40.dp).testTag("button_cancel_transaction")
-                    ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
-                            Text("Batalkan & Retur", color = DangerRed, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Baris Atas: Batalkan & Retur <> Hapus
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (transaction.status != "CANCELLED") {
+                        Surface(
+                            onClick = onCancelTransaction,
+                            shape = KelolaRadius.ShapeInput,
+                            color = DangerRed.copy(alpha = 0.12f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .testTag("button_cancel_transaction")
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
+                                Text("Batalkan & Retur", color = DangerRed, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            }
                         }
                     }
+                    Button(
+                        onClick = onDeleteTransaction,
+                        colors = ButtonDefaults.buttonColors(containerColor = DangerRed),
+                        shape = KelolaRadius.ShapeInput,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp)
+                            .testTag("button_delete_transaction")
+                    ) {
+                        Text("Hapus", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    }
                 }
-                Button(
-                    onClick = onDeleteTransaction,
-                    colors = ButtonDefaults.buttonColors(containerColor = DangerRed),
+
+                // Baris Bawah: Tutup (tepat di tengah)
+                TextButton(
+                    onClick = onDismiss,
                     shape = KelolaRadius.ShapeInput,
-                    modifier = Modifier.height(40.dp).testTag("button_delete_transaction")
+                    modifier = Modifier.testTag("button_dismiss_transaction_detail")
                 ) {
-                    Text("Hapus", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text(
+                        text = "Tutup",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Tutup", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
             }
         }
     )

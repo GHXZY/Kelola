@@ -1,5 +1,15 @@
 package com.example.ui.reports
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalDensity
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -717,8 +727,15 @@ fun ReportScreen(
         // TAB 2: Buku Kas / Arus Kas
         if (selectedTab == 2) {
             item {
+                CashflowAreaChart(
+                    timeline = cashflowTimeline,
+                    selectedPeriod = selectedPeriod
+                )
+            }
+
+            item {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -1018,5 +1035,359 @@ fun ReportScreen(
                 itemToDelete = null
             }
         )
+    }
+}
+
+
+// =========================================================================
+// GRAFIK AREA CHART ARUS KAS (Pemasukan VS Pengeluaran)
+// =========================================================================
+data class CashflowDataPoint(
+    val label: String,
+    val income: Long,
+    val expense: Long
+)
+
+fun generateCashflowDataPoints(timeline: List<CashflowItem>, selectedPeriod: String): List<CashflowDataPoint> {
+    val cal = Calendar.getInstance()
+    val points = mutableListOf<CashflowDataPoint>()
+
+    if (selectedPeriod == "Hari Ini") {
+        // Bagi menjadi 6 interval waktu hari ini
+        val today = Calendar.getInstance()
+        today.set(Calendar.HOUR_OF_DAY, 0)
+        today.set(Calendar.MINUTE, 0)
+        today.set(Calendar.SECOND, 0)
+        today.set(Calendar.MILLISECOND, 0)
+        val todayStart = today.timeInMillis
+
+        val intervals = listOf(
+            "04:00" to (todayStart to todayStart + 4 * 3600 * 1000L),
+            "08:00" to (todayStart + 4 * 3600 * 1000L to todayStart + 8 * 3600 * 1000L),
+            "12:00" to (todayStart + 8 * 3600 * 1000L to todayStart + 12 * 3600 * 1000L),
+            "16:00" to (todayStart + 12 * 3600 * 1000L to todayStart + 16 * 3600 * 1000L),
+            "20:00" to (todayStart + 16 * 3600 * 1000L to todayStart + 20 * 3600 * 1000L),
+            "24:00" to (todayStart + 20 * 3600 * 1000L to todayStart + 24 * 3600 * 1000L)
+        )
+
+        for ((lbl, range) in intervals) {
+            val inc = timeline.filter { it.isIncome && it.date in range.first..range.second }.sumOf { it.amount }
+            val exp = timeline.filter { !it.isIncome && it.date in range.first..range.second }.sumOf { it.amount }
+            points.add(CashflowDataPoint(lbl, inc, exp))
+        }
+    } else {
+        // Tampilkan 7 hari mundur dari hari ini
+        val dayFormat = SimpleDateFormat("EEE", Locale("id", "ID"))
+        for (i in 6 downTo 0) {
+            val dCal = Calendar.getInstance()
+            dCal.add(Calendar.DAY_OF_YEAR, -i)
+            dCal.set(Calendar.HOUR_OF_DAY, 0)
+            dCal.set(Calendar.MINUTE, 0)
+            dCal.set(Calendar.SECOND, 0)
+            dCal.set(Calendar.MILLISECOND, 0)
+            val dayStart = dCal.timeInMillis
+            val dayEnd = dayStart + 24 * 3600 * 1000L - 1L
+
+            val inc = timeline.filter { it.isIncome && it.date in dayStart..dayEnd }.sumOf { it.amount }
+            val exp = timeline.filter { !it.isIncome && it.date in dayStart..dayEnd }.sumOf { it.amount }
+            val lbl = dayFormat.format(dCal.time).replace(".", "").take(3)
+            points.add(CashflowDataPoint(lbl, inc, exp))
+        }
+    }
+
+    return points
+}
+
+@Composable
+fun CashflowAreaChart(
+    timeline: List<CashflowItem>,
+    selectedPeriod: String,
+    modifier: Modifier = Modifier
+) {
+    val dataPoints = remember(timeline, selectedPeriod) {
+        generateCashflowDataPoints(timeline, selectedPeriod)
+    }
+
+    val totalIncome = remember(timeline) {
+        timeline.filter { it.isIncome }.sumOf { it.amount }
+    }
+    val totalExpense = remember(timeline) {
+        timeline.filter { !it.isIncome }.sumOf { it.amount }
+    }
+    val netCashflow = totalIncome - totalExpense
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+        shape = KelolaRadius.ShapeCard,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header Bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Grafik Arus Kas",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Pemasukan VS Pengeluaran ($selectedPeriod)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Surface(
+                    shape = KelolaRadius.ShapeSmall,
+                    color = if (netCashflow >= 0) SuccessContainer else DangerContainer
+                ) {
+                    Text(
+                        text = if (netCashflow >= 0) "Surplus: ${FormatUtils.formatRupiah(netCashflow)}"
+                               else "Defisit: -${FormatUtils.formatRupiah(kotlin.math.abs(netCashflow))}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (netCashflow >= 0) SuccessGreen else DangerRed,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            // Summary Metrics
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Surface(
+                    shape = KelolaRadius.ShapeSmall,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(SuccessGreen)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Column {
+                            Text("Total Pemasukan", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(FormatUtils.formatRupiah(totalIncome), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
+                        }
+                    }
+                }
+
+                Surface(
+                    shape = KelolaRadius.ShapeSmall,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(DangerRed)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Column {
+                            Text("Total Pengeluaran", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(FormatUtils.formatRupiah(totalExpense), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DangerRed)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Area Chart Canvas
+            val maxAmount = remember(dataPoints) {
+                val maxVal = dataPoints.maxOfOrNull { maxOf(it.income, it.expense) } ?: 0L
+                if (maxVal <= 0L) 100_000L else maxVal
+            }
+
+            val gridLineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            val incomeColor = SuccessGreen
+            val expenseColor = DangerRed
+            val density = LocalDensity.current
+            val strokeWidthPx = with(density) { 2.5.dp.toPx() }
+            val dotRadiusPx = with(density) { 3.5.dp.toPx() }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(130.dp)
+            ) {
+                Canvas(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val w = size.width
+                    val h = size.height
+                    val n = dataPoints.size
+                    if (n < 2) return@Canvas
+
+                    val stepX = w / (n - 1)
+
+                    // Garis bantu horizontal tipis
+                    val gridCount = 3
+                    for (i in 0..gridCount) {
+                        val y = h * (i.toFloat() / gridCount)
+                        drawLine(
+                            color = gridLineColor,
+                            start = androidx.compose.ui.geometry.Offset(0f, y),
+                            end = androidx.compose.ui.geometry.Offset(w, y),
+                            strokeWidth = 1f
+                        )
+                    }
+
+                    fun getY(amount: Long): Float {
+                        val ratio = (amount.toFloat() / maxAmount.toFloat()).coerceIn(0f, 1f)
+                        return h - (ratio * (h - 24f)) - 12f
+                    }
+
+                    // 1. Path Pemasukan
+                    val incomePath = Path()
+                    val incomeAreaPath = Path()
+
+                    val firstIncY = getY(dataPoints[0].income)
+                    incomePath.moveTo(0f, firstIncY)
+                    incomeAreaPath.moveTo(0f, h)
+                    incomeAreaPath.lineTo(0f, firstIncY)
+
+                    for (i in 1 until n) {
+                        val prevX = (i - 1) * stepX
+                        val prevY = getY(dataPoints[i - 1].income)
+                        val currX = i * stepX
+                        val currY = getY(dataPoints[i].income)
+
+                        val cX1 = (prevX + currX) / 2f
+                        val cY1 = prevY
+                        val cX2 = (prevX + currX) / 2f
+                        val cY2 = currY
+
+                        incomePath.cubicTo(cX1, cY1, cX2, cY2, currX, currY)
+                        incomeAreaPath.cubicTo(cX1, cY1, cX2, cY2, currX, currY)
+                    }
+
+                    incomeAreaPath.lineTo((n - 1) * stepX, h)
+                    incomeAreaPath.close()
+
+                    drawPath(
+                        path = incomeAreaPath,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                incomeColor.copy(alpha = 0.38f),
+                                incomeColor.copy(alpha = 0.03f)
+                            ),
+                            startY = 0f,
+                            endY = h
+                        )
+                    )
+
+                    drawPath(
+                        path = incomePath,
+                        color = incomeColor,
+                        style = Stroke(width = strokeWidthPx)
+                    )
+
+                    // 2. Path Pengeluaran
+                    val expensePath = Path()
+                    val expenseAreaPath = Path()
+
+                    val firstExpY = getY(dataPoints[0].expense)
+                    expensePath.moveTo(0f, firstExpY)
+                    expenseAreaPath.moveTo(0f, h)
+                    expenseAreaPath.lineTo(0f, firstExpY)
+
+                    for (i in 1 until n) {
+                        val prevX = (i - 1) * stepX
+                        val prevY = getY(dataPoints[i - 1].expense)
+                        val currX = i * stepX
+                        val currY = getY(dataPoints[i].expense)
+
+                        val cX1 = (prevX + currX) / 2f
+                        val cY1 = prevY
+                        val cX2 = (prevX + currX) / 2f
+                        val cY2 = currY
+
+                        expensePath.cubicTo(cX1, cY1, cX2, cY2, currX, currY)
+                        expenseAreaPath.cubicTo(cX1, cY1, cX2, cY2, currX, currY)
+                    }
+
+                    expenseAreaPath.lineTo((n - 1) * stepX, h)
+                    expenseAreaPath.close()
+
+                    drawPath(
+                        path = expenseAreaPath,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                expenseColor.copy(alpha = 0.30f),
+                                expenseColor.copy(alpha = 0.02f)
+                            ),
+                            startY = 0f,
+                            endY = h
+                        )
+                    )
+
+                    drawPath(
+                        path = expensePath,
+                        color = expenseColor,
+                        style = Stroke(width = strokeWidthPx)
+                    )
+
+                    // Data dots
+                    for (i in 0 until n) {
+                        val x = i * stepX
+                        val incY = getY(dataPoints[i].income)
+                        val expY = getY(dataPoints[i].expense)
+
+                        drawCircle(
+                            color = incomeColor,
+                            radius = dotRadiusPx,
+                            center = androidx.compose.ui.geometry.Offset(x, incY)
+                        )
+                        drawCircle(
+                            color = expenseColor,
+                            radius = dotRadiusPx,
+                            center = androidx.compose.ui.geometry.Offset(x, expY)
+                        )
+                    }
+                }
+            }
+
+            // X-Axis Labels Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                dataPoints.forEach { pt ->
+                    Text(
+                        text = pt.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 }

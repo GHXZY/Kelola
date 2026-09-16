@@ -1,5 +1,12 @@
 package com.example.ui.cashier
 
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import android.widget.Toast
+import com.example.ui.BankAccount
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -95,6 +102,7 @@ fun PaymentDialog(
     defaultPaymentMethod: String = "Tunai",
     qrisImagePath: String = "",
     qrisMerchantName: String = "",
+    bankAccounts: List<BankAccount> = emptyList(),
     onConfirmSale: (
         paymentMethod: String,
         amountPaid: Long,
@@ -109,7 +117,11 @@ fun PaymentDialog(
     onDismiss: () -> Unit
 ) {
     val paymentMethods = listOf("Tunai", "QRIS", "Transfer", "E-Wallet")
-    var selectedMethod by remember(defaultPaymentMethod) { mutableStateOf(defaultPaymentMethod.ifBlank { "Tunai" }) }
+    var selectedMethod by remember(defaultPaymentMethod) {
+        mutableStateOf(paymentMethods.firstOrNull { it.equals(defaultPaymentMethod, ignoreCase = true) } ?: "Tunai")
+    }
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
 
     var cashReceivedInput by remember { mutableStateOf(FormatUtils.formatNumberWithDots(totalAmount)) }
     val cashReceivedLong = FormatUtils.parseRupiahInput(cashReceivedInput)
@@ -507,7 +519,95 @@ fun PaymentDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (selectedMethod == "QRIS" && qrisBitmap != null) {
+                        if (selectedMethod == "Transfer") {
+                            // Transfer Bank Accounts
+                            Text(
+                                text = "Rekening Transfer Toko",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (bankAccounts.isEmpty()) {
+                                Surface(
+                                    shape = KelolaRadius.ShapeSmall,
+                                    color = MaterialTheme.colorScheme.surface,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "Belum ada rekening transfer yang didaftarkan. Atur di menu Pengaturan.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(12.dp),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                    bankAccounts.forEach { acc ->
+                                        Surface(
+                                            shape = KelolaRadius.ShapeSmall,
+                                            color = MaterialTheme.colorScheme.surface,
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Text(
+                                                            text = acc.bankName.uppercase(),
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 11.sp,
+                                                            color = MaterialTheme.colorScheme.primary
+                                                        )
+                                                        Spacer(modifier = Modifier.width(6.dp))
+                                                        Text(
+                                                            text = acc.accountNumber,
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 13.sp,
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                    }
+                                                    Text(
+                                                        text = "a.n. ${acc.accountName}",
+                                                        fontSize = 11.sp,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+
+                                                Surface(
+                                                    onClick = {
+                                                        clipboardManager.setText(AnnotatedString(acc.accountNumber))
+                                                        Toast.makeText(context, "Nomor rekening ${acc.bankName} berhasil disalin!", Toast.LENGTH_SHORT).show()
+                                                    },
+                                                    shape = KelolaRadius.ShapeSmall,
+                                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                                                    modifier = Modifier.height(32.dp)
+                                                ) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                                    ) {
+                                                        Icon(Icons.Default.ContentCopy, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(12.dp))
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Text("Salin", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Text(
+                                text = "Total Bayar: ${FormatUtils.formatRupiah(totalAmount)}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else if (selectedMethod == "QRIS" && qrisBitmap != null) {
                             // Real QRIS Preview Card
                             Text(
                                 text = qrisMerchantName.ifBlank { "QRIS Toko" },

@@ -1,5 +1,6 @@
 package com.example.ui.cashier
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,11 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,7 +52,8 @@ fun TransactionSuccessDialog(
     transaction: TransactionEntity,
     onDismiss: () -> Unit = {},
     onNewSale: () -> Unit,
-    onViewDetail: (TransactionEntity) -> Unit
+    onViewDetail: (TransactionEntity) -> Unit,
+    onShareReceipt: ((TransactionEntity) -> Unit)? = null
 ) {
     AlertDialog(
         onDismissRequest = {
@@ -224,6 +228,39 @@ fun TransactionSuccessDialog(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp
                         )
+                    }
+                }
+
+                if (onShareReceipt != null) {
+                    Surface(
+                        onClick = { onShareReceipt(transaction) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .testTag("button_success_share_pdf"),
+                        shape = KelolaRadius.ShapeInput,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Bagikan Struk (PDF)",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }

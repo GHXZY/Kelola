@@ -212,15 +212,15 @@ fun AddEditProductScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F9FF))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // =========================================================================
         // 1. TOP BAR (Sama persis dengan AddEditProductScreen.tsx)
         // =========================================================================
         Surface(
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Row(
                 modifier = Modifier
@@ -235,7 +235,7 @@ fun AddEditProductScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFF1F5F9))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                         .clickable { onNavigateBack() }
                         .testTag("button_back_product_form"),
                     contentAlignment = Alignment.Center
@@ -243,7 +243,7 @@ fun AddEditProductScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Kembali",
-                        tint = BrandPrimary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -254,14 +254,14 @@ fun AddEditProductScreen(
                         style = TextStyle(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1E293B)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     )
                     Text(
                         text = "Lengkapi detail barang dagangan toko",
                         style = TextStyle(
                             fontSize = 12.sp,
-                            color = Color(0xFF64748B)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
@@ -285,8 +285,8 @@ fun AddEditProductScreen(
             // -------------------------------------------------------------
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -303,7 +303,7 @@ fun AddEditProductScreen(
                             style = TextStyle(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF334155)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         )
                         OutlinedTextField(
@@ -313,18 +313,18 @@ fun AddEditProductScreen(
                                 nameError = it.isBlank()
                             },
                             placeholder = {
-                                Text("Misal: Es Kopi Susu Aren", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                                Text("Misal: Es Kopi Susu Aren", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             },
                             singleLine = true,
                             isError = nameError,
                             shape = RoundedCornerShape(8.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = Color(0xFFF1F5F9),
-                                focusedContainerColor = Color.White,
-                                unfocusedBorderColor = Color(0xFFE2E8F0),
-                                focusedBorderColor = BrandPrimary,
-                                focusedTextColor = Color(0xFF1E293B),
-                                unfocusedTextColor = Color(0xFF1E293B)
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -343,7 +343,7 @@ fun AddEditProductScreen(
                             style = TextStyle(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF334155)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         )
                         Row(
@@ -355,8 +355,8 @@ fun AddEditProductScreen(
                             Box(modifier = Modifier.weight(1f)) {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFF1F5F9),
-                                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(44.dp)
@@ -372,13 +372,13 @@ fun AddEditProductScreen(
                                         Text(
                                             text = selectedCategoryName,
                                             fontSize = 12.sp,
-                                            color = Color(0xFF1E293B),
+                                            color = MaterialTheme.colorScheme.onSurface,
                                             fontWeight = FontWeight.Medium
                                         )
                                         Text(
                                             text = "▼",
                                             fontSize = 10.sp,
-                                            color = Color(0xFF64748B)
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
@@ -386,7 +386,7 @@ fun AddEditProductScreen(
                                 DropdownMenu(
                                     expanded = showCategoryDropdown,
                                     onDismissRequest = { showCategoryDropdown = false },
-                                    modifier = Modifier.background(Color.White)
+                                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                                 ) {
                                     categories.forEach { cat ->
                                         DropdownMenuItem(
@@ -403,8 +403,8 @@ fun AddEditProductScreen(
                             // Plus Button for New Category
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFFEFF6FF),
-                                border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                                 modifier = Modifier
                                     .size(44.dp)
                                     .clip(RoundedCornerShape(8.dp))
@@ -415,7 +415,7 @@ fun AddEditProductScreen(
                                     Icon(
                                         imageVector = Icons.Default.Add,
                                         contentDescription = "Tambah Kategori Baru",
-                                        tint = BrandPrimary,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -438,23 +438,23 @@ fun AddEditProductScreen(
                                 style = TextStyle(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF334155)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             )
                             OutlinedTextField(
                                 value = costPriceText,
                                 onValueChange = { costPriceText = it.filter { c -> c.isDigit() } },
-                                placeholder = { Text("0", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
+                                placeholder = { Text("0", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 shape = RoundedCornerShape(8.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF1F5F9),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedBorderColor = BrandPrimary,
-                                    focusedTextColor = Color(0xFF1E293B),
-                                    unfocusedTextColor = Color(0xFF1E293B)
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -472,7 +472,7 @@ fun AddEditProductScreen(
                                 style = TextStyle(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF334155)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             )
                             OutlinedTextField(
@@ -481,20 +481,20 @@ fun AddEditProductScreen(
                                     sellingPriceText = it.filter { c -> c.isDigit() }
                                     sellingPriceError = (it.toLongOrNull() ?: 0L) <= 0
                                 },
-                                placeholder = { Text("0", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
+                                placeholder = { Text("0", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                                 singleLine = true,
                                 isError = sellingPriceError,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 shape = RoundedCornerShape(8.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF1F5F9),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedBorderColor = BrandPrimary,
-                                    focusedTextColor = BrandPrimary,
-                                    unfocusedTextColor = BrandPrimary
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    focusedTextColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.primary
                                 ),
-                                textStyle = TextStyle(fontWeight = FontWeight.Bold, color = BrandPrimary),
+                                textStyle = TextStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(48.dp)
@@ -518,23 +518,23 @@ fun AddEditProductScreen(
                                 style = TextStyle(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF334155)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             )
                             OutlinedTextField(
                                 value = stockText,
                                 onValueChange = { stockText = it.filter { c -> c.isDigit() } },
-                                placeholder = { Text("0", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
+                                placeholder = { Text("0", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 shape = RoundedCornerShape(8.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF1F5F9),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedBorderColor = BrandPrimary,
-                                    focusedTextColor = Color(0xFF1E293B),
-                                    unfocusedTextColor = Color(0xFF1E293B)
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -552,23 +552,23 @@ fun AddEditProductScreen(
                                 style = TextStyle(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF334155)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             )
                             OutlinedTextField(
                                 value = minStockText,
                                 onValueChange = { minStockText = it.filter { c -> c.isDigit() } },
-                                placeholder = { Text("3", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
+                                placeholder = { Text("3", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 shape = RoundedCornerShape(8.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color(0xFFF1F5F9),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedBorderColor = BrandPrimary,
-                                    focusedTextColor = Color(0xFF1E293B),
-                                    unfocusedTextColor = Color(0xFF1E293B)
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -584,7 +584,7 @@ fun AddEditProductScreen(
                             style = TextStyle(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF334155)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         )
                         LazyRow(
@@ -595,10 +595,10 @@ fun AddEditProductScreen(
                                 val isSelected = unit == u
                                 Surface(
                                     shape = RoundedCornerShape(16.dp),
-                                    color = if (isSelected) BrandPrimary else Color(0xFFF1F5F9),
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                     border = BorderStroke(
                                         1.dp,
-                                        if (isSelected) BrandPrimary else Color.Transparent
+                                        if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
                                     ),
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(16.dp))
@@ -608,7 +608,7 @@ fun AddEditProductScreen(
                                         text = u,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (isSelected) Color.White else Color(0xFF475569),
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                     )
                                 }
@@ -623,8 +623,8 @@ fun AddEditProductScreen(
             // -------------------------------------------------------------
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -649,14 +649,14 @@ fun AddEditProductScreen(
                             Icon(
                                 imageVector = Icons.Default.CalendarToday,
                                 contentDescription = null,
-                                tint = BrandPrimary,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "Masa Simpan & Kadaluarsa",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = BrandPrimary
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
 
@@ -673,7 +673,7 @@ fun AddEditProductScreen(
                             Text(
                                 text = "Ada Kadaluarsa",
                                 fontSize = 11.sp,
-                                color = Color(0xFF64748B),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium
                             )
                             Checkbox(
@@ -684,13 +684,13 @@ fun AddEditProductScreen(
                                         setPresetDays(30)
                                     }
                                 },
-                                colors = CheckboxDefaults.colors(checkedColor = BrandPrimary)
+                                colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
                             )
                         }
                     }
 
                     if (hasExpiry) {
-                        HorizontalDivider(color = Color(0xFFF1F5F9))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                         // Segmented Toggle: Tanggal Saja vs Tanggal & Jam
                         Row(
@@ -700,10 +700,10 @@ fun AddEditProductScreen(
                             // Tanggal Saja
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = if (expiryMode == "DATE_ONLY") BrandPrimary else Color(0xFFF1F5F9),
+                                color = if (expiryMode == "DATE_ONLY") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                 border = BorderStroke(
                                     1.dp,
-                                    if (expiryMode == "DATE_ONLY") BrandPrimary else Color.Transparent
+                                    if (expiryMode == "DATE_ONLY") MaterialTheme.colorScheme.primary else Color.Transparent
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
@@ -719,7 +719,7 @@ fun AddEditProductScreen(
                                     Icon(
                                         imageVector = Icons.Default.CalendarToday,
                                         contentDescription = null,
-                                        tint = if (expiryMode == "DATE_ONLY") Color.White else Color(0xFF334155),
+                                        tint = if (expiryMode == "DATE_ONLY") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -727,7 +727,7 @@ fun AddEditProductScreen(
                                         text = "Tanggal Saja",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (expiryMode == "DATE_ONLY") Color.White else Color(0xFF334155)
+                                        color = if (expiryMode == "DATE_ONLY") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -735,10 +735,10 @@ fun AddEditProductScreen(
                             // Tanggal & Jam
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = if (expiryMode == "DATE_TIME") BrandPrimary else Color(0xFFF1F5F9),
+                                color = if (expiryMode == "DATE_TIME") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                 border = BorderStroke(
                                     1.dp,
-                                    if (expiryMode == "DATE_TIME") BrandPrimary else Color.Transparent
+                                    if (expiryMode == "DATE_TIME") MaterialTheme.colorScheme.primary else Color.Transparent
                                 ),
                                 modifier = Modifier
                                     .weight(1f)
@@ -754,7 +754,7 @@ fun AddEditProductScreen(
                                     Icon(
                                         imageVector = Icons.Default.Schedule,
                                         contentDescription = null,
-                                        tint = if (expiryMode == "DATE_TIME") Color.White else Color(0xFF334155),
+                                        tint = if (expiryMode == "DATE_TIME") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -762,7 +762,7 @@ fun AddEditProductScreen(
                                         text = "Tanggal & Jam",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (expiryMode == "DATE_TIME") Color.White else Color(0xFF334155)
+                                        color = if (expiryMode == "DATE_TIME") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -783,13 +783,13 @@ fun AddEditProductScreen(
                                     style = TextStyle(
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF475569)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFF1F5F9),
-                                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(44.dp)
@@ -806,12 +806,12 @@ fun AddEditProductScreen(
                                         Text(
                                             text = expiryDate.ifBlank { "Pilih Tanggal" },
                                             fontSize = 12.sp,
-                                            color = if (expiryDate.isNotBlank()) Color(0xFF1E293B) else Color(0xFF94A3B8)
+                                            color = if (expiryDate.isNotBlank()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Icon(
                                             imageVector = Icons.Default.CalendarToday,
                                             contentDescription = null,
-                                            tint = Color(0xFF64748B),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(15.dp)
                                         )
                                     }
@@ -829,13 +829,13 @@ fun AddEditProductScreen(
                                         style = TextStyle(
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF475569)
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     )
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFF1F5F9),
-                                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(44.dp)
@@ -852,12 +852,12 @@ fun AddEditProductScreen(
                                             Text(
                                                 text = expiryTime.ifBlank { "00:00" },
                                                 fontSize = 12.sp,
-                                                color = Color(0xFF1E293B)
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Icon(
                                                 imageVector = Icons.Default.Schedule,
                                                 contentDescription = null,
-                                                tint = Color(0xFF64748B),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.size(15.dp)
                                             )
                                         }
@@ -873,7 +873,7 @@ fun AddEditProductScreen(
                                 style = TextStyle(
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF64748B)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             )
                             val presets = listOf(
@@ -891,8 +891,8 @@ fun AddEditProductScreen(
                                 items(presets) { (label, days) ->
                                     Surface(
                                         shape = RoundedCornerShape(14.dp),
-                                        color = Color(0xFFF1F5F9),
-                                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(14.dp))
                                             .clickable { setPresetDays(days) }
@@ -901,7 +901,7 @@ fun AddEditProductScreen(
                                             text = label,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF334155),
+                                            color = MaterialTheme.colorScheme.onSurface,
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                         )
                                     }
@@ -913,8 +913,8 @@ fun AddEditProductScreen(
                         if (expiryDate.isNotBlank()) {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFFEFF6FF),
-                                border = BorderStroke(1.dp, Color(0xFFBAE6FD)),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
@@ -927,7 +927,7 @@ fun AddEditProductScreen(
                                     Text(
                                         text = "Otomatis tercatat rugi jika kadaluarsa: $expiryDate ${if (expiryMode == "DATE_TIME") "pukul $expiryTime" else "23:59"}",
                                         fontSize = 11.sp,
-                                        color = Color(0xFF1E3A8A),
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.weight(1f)
                                     )
                                     TextButton(
@@ -987,8 +987,8 @@ fun AddEditProductScreen(
                     .testTag("button_save_product"),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = BrandPrimary,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Icon(

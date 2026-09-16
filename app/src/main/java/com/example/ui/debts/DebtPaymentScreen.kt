@@ -1,5 +1,12 @@
 package com.example.ui.debts
 
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import android.widget.Toast
+import com.example.ui.BankAccount
+
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -99,6 +106,7 @@ fun DebtPaymentScreen(
     debt: DebtEntity,
     qrisImagePath: String = "",
     qrisMerchantName: String = "",
+    bankAccounts: List<BankAccount> = emptyList(),
     onConfirmSettle: (debtId: Long, amount: Long, paymentMethod: String, note: String) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -108,6 +116,8 @@ fun DebtPaymentScreen(
         mutableStateOf(FormatUtils.formatNumberWithDots(debt.remainingAmount))
     }
     var selectedMethod by remember { mutableStateOf("Tunai") }
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     var noteInput by remember { mutableStateOf("") }
 
     val paymentMethods = listOf("Tunai", "QRIS", "Transfer", "E-Wallet", "Lainnya")
@@ -758,6 +768,189 @@ fun DebtPaymentScreen(
                                         )
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+
+                "Transfer" -> {
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .kelolaSoftShadow(KelolaRadius.ShapeCard, 4.dp),
+                            shape = KelolaRadius.ShapeCard,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(18.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.AccountBalance,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                    Column {
+                                        Text(
+                                            text = "Rekening Transfer Toko",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "Pilih / salin nomor rekening untuk pelunasan",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                if (bankAccounts.isEmpty()) {
+                                    Surface(
+                                        shape = KelolaRadius.ShapeInput,
+                                        color = WarningContainer.copy(alpha = 0.5f),
+                                        border = BorderStroke(1.dp, WarningAmber.copy(alpha = 0.5f)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(14.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text(
+                                                text = "Belum Ada Rekening Terdaftar",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                                color = WarningAmber
+                                            )
+                                            Text(
+                                                text = "Atur rekening transfer toko (maks. 5 rekening) di menu Pengaturan > Akun Rekening Bank.",
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        bankAccounts.forEach { acc ->
+                                            Card(
+                                                shape = KelolaRadius.ShapeInput,
+                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(12.dp),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Column(modifier = Modifier.weight(1f)) {
+                                                        Surface(
+                                                            shape = KelolaRadius.ShapeSmall,
+                                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                                        ) {
+                                                            Text(
+                                                                text = acc.bankName.uppercase(),
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontSize = 11.sp,
+                                                                color = MaterialTheme.colorScheme.primary,
+                                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                                            )
+                                                        }
+                                                        Spacer(modifier = Modifier.height(4.dp))
+                                                        Text(
+                                                            text = acc.accountNumber,
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                        Text(
+                                                            text = "a.n. ${acc.accountName}",
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+
+                                                    // Tombol Salin
+                                                    Surface(
+                                                        onClick = {
+                                                            clipboardManager.setText(AnnotatedString(acc.accountNumber))
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Nomor rekening ${acc.bankName} berhasil disalin!",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        },
+                                                        shape = KelolaRadius.ShapeSmall,
+                                                        color = MaterialTheme.colorScheme.surface,
+                                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                                                        modifier = Modifier.height(36.dp).testTag("button_settle_copy_account_${acc.id}")
+                                                    ) {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            modifier = Modifier.padding(horizontal = 10.dp)
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.ContentCopy,
+                                                                contentDescription = "Salin",
+                                                                tint = MaterialTheme.colorScheme.primary,
+                                                                modifier = Modifier.size(14.dp)
+                                                            )
+                                                            Spacer(modifier = Modifier.width(4.dp))
+                                                            Text(
+                                                                text = "Salin",
+                                                                fontSize = 12.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.primary
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                    thickness = 1.dp
+                                )
+
+                                Text(
+                                    text = "Total yang harus ditransfer: ${FormatUtils.formatRupiah(settleAmount)}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                Text(
+                                    text = "Pastikan pelanggan telah mentransfer sebelum menekan tombol Konfirmasi Pelunasan.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
                     }

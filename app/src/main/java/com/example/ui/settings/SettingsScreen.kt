@@ -1,5 +1,15 @@
 package com.example.ui.settings
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material3.AlertDialog
+import com.example.ui.BankAccount
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -46,6 +56,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
@@ -81,6 +92,7 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -95,10 +107,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.components.ConfirmationDialog
 import com.example.ui.components.KelolaLogoBadge
+import com.example.ui.theme.ColorTheme
 import com.example.ui.theme.DangerRed
 import com.example.ui.theme.KelolaRadius
 import com.example.ui.theme.KelolaSpacing
@@ -132,8 +146,12 @@ fun SettingsScreen(
     previousSalesDate: String,
     previousSalesNote: String,
     themeMode: String,
+    colorTheme: String = "DEFAULT",
     viewportWidth: String = "412dp",
     onSaveViewportWidth: (String) -> Unit = {},
+    bankAccounts: List<BankAccount> = emptyList(),
+    onAddBankAccount: (bankName: String, accountName: String, accountNumber: String) -> Unit = { _, _, _ -> },
+    onRemoveBankAccount: (String) -> Unit = {},
     onSaveBusinessInfo: (name: String, address: String, phone: String) -> Unit,
     onSaveDefaultPaymentMethod: (String) -> Unit,
     onUploadQris: (Uri) -> Unit,
@@ -143,6 +161,7 @@ fun SettingsScreen(
     onSavePreviousSales: (amount: Long, date: String, note: String) -> Unit,
     onSaveReceiptFooter: (String) -> Unit,
     onUpdateThemeMode: (String) -> Unit,
+    onUpdateColorTheme: (String) -> Unit = {},
     onExportBackup: () -> Unit,
     onResetSettingsOnly: () -> Unit,
     onResetAllData: () -> Unit,
@@ -164,6 +183,11 @@ fun SettingsScreen(
     var showCropDialog by remember { mutableStateOf(false) }
 
     var showDeleteQrisConfirm by remember { mutableStateOf(false) }
+    var showAddBankDialog by remember { mutableStateOf(false) }
+    var newBankName by remember { mutableStateOf("") }
+    var newAccountName by remember { mutableStateOf("") }
+    var newAccountNumber by remember { mutableStateOf("") }
+    var bankInputError by remember { mutableStateOf(false) }
     var showResetSettingsConfirm by remember { mutableStateOf(false) }
     var showResetAllDataConfirm by remember { mutableStateOf(false) }
 
@@ -448,12 +472,19 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            Row(
+                            LazyRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                listOf("Tunai", "QRIS").forEach { method ->
-                                    val isSelected = defaultPaymentMethod == method
+                                items(listOf("Tunai", "QRIS", "Transfer", "E-Wallet")) { method ->
+                                    val isSelected = defaultPaymentMethod.equals(method, ignoreCase = true) || (method == "E-Wallet" && defaultPaymentMethod.equals("Emoney", ignoreCase = true))
+                                    val methodIcon = when (method) {
+                                        "Tunai" -> Icons.Default.LocalAtm
+                                        "QRIS" -> Icons.Default.QrCode
+                                        "Transfer" -> Icons.Default.AccountBalance
+                                        "E-Wallet" -> Icons.Default.CreditCard
+                                        else -> Icons.Default.Payments
+                                    }
                                     FilterChip(
                                         selected = isSelected,
                                         onClick = {
@@ -469,7 +500,7 @@ fun SettingsScreen(
                                         },
                                         leadingIcon = {
                                             Icon(
-                                                imageVector = if (method == "Tunai") Icons.Default.LocalAtm else Icons.Default.QrCode,
+                                                imageVector = methodIcon,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(18.dp)
                                             )
@@ -631,6 +662,184 @@ fun SettingsScreen(
                                     Text("Pilih Gambar QRIS dari Galeri", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            // =============================================================
+            // 2B. AKUN REKENING TRANSFER BANK (Maksimal 5 Akun)
+            // =============================================================
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .kelolaSoftShadow(shape = KelolaRadius.ShapeCard, elevation = 2.dp),
+                    shape = KelolaRadius.ShapeCard,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f, fill = false)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalance,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Akun Rekening Bank",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            Surface(
+                                shape = KelolaRadius.ShapeSmall,
+                                color = MaterialTheme.colorScheme.surfaceVariant
+                            ) {
+                                Text(
+                                    text = "${bankAccounts.size}/5 Akun",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        // Daftar Akun Bank yang Ada
+                        if (bankAccounts.isEmpty()) {
+                            Surface(
+                                shape = KelolaRadius.ShapeInput,
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Belum ada rekening transfer yang didaftarkan. Tambahkan rekening agar pelanggan dapat melihat detail transfer saat berbelanja.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(14.dp)
+                                )
+                            }
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                bankAccounts.forEach { acc ->
+                                    Card(
+                                        shape = KelolaRadius.ShapeInput,
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Surface(
+                                                        shape = KelolaRadius.ShapeSmall,
+                                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                                    ) {
+                                                        Text(
+                                                            text = acc.bankName.uppercase(),
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 11.sp,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        )
+                                                    }
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(
+                                                        text = acc.accountNumber,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 14.sp,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(
+                                                    text = "a.n. ${acc.accountName}",
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+
+                                            IconButton(
+                                                onClick = {
+                                                    onRemoveBankAccount(acc.id)
+                                                    showSuccess("Rekening ${acc.bankName} dihapus")
+                                                },
+                                                modifier = Modifier.size(36.dp).testTag("button_delete_bank_${acc.id}")
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Hapus Rekening",
+                                                    tint = DangerRed,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Tombol Tambah Rekening (Maksimal 5)
+                        if (bankAccounts.size < 5) {
+                            Button(
+                                onClick = {
+                                    newBankName = ""
+                                    newAccountName = ""
+                                    newAccountNumber = ""
+                                    bankInputError = false
+                                    showAddBankDialog = true
+                                },
+                                shape = KelolaRadius.ShapeInput,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp)
+                                    .testTag("button_add_bank_account")
+                            ) {
+                                Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Tambah Rekening Bank", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        } else {
+                            Text(
+                                text = "Batas maksimum 5 akun rekening telah tercapai.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                            )
                         }
                     }
                 }
@@ -808,6 +1017,97 @@ fun SettingsScreen(
                         }
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        // --- PILIHAN TEMA WARNA APLIKASI ---
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Palette,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Warna Tema Utama",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                ColorTheme.entries.forEach { themeItem ->
+                                    val isCurrentThemeSelected = colorTheme.equals(themeItem.key, ignoreCase = true)
+                                    Surface(
+                                        shape = KelolaRadius.ShapeInput,
+                                        color = if (isCurrentThemeSelected) themeItem.previewColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                        border = BorderStroke(
+                                            width = if (isCurrentThemeSelected) 2.dp else 1.dp,
+                                            color = if (isCurrentThemeSelected) themeItem.previewColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(KelolaRadius.ShapeInput)
+                                            .clickable {
+                                                onUpdateColorTheme(themeItem.key)
+                                                showSuccess("Warna tema diubah ke ${themeItem.displayName}!")
+                                            }
+                                            .testTag("theme_swatch_${themeItem.key}")
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(themeItem.previewColor)
+                                                    .border(
+                                                        width = if (isCurrentThemeSelected) 2.dp else 0.dp,
+                                                        color = Color.White,
+                                                        shape = CircleShape
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (isCurrentThemeSelected) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Text(
+                                                text = themeItem.displayName,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = if (isCurrentThemeSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isCurrentThemeSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+
+                        Text(
+                            text = "Mode Tampilan",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
 
                         val modes = listOf(
                             Triple("LIGHT", "Mode Terang", Icons.Default.LightMode),
@@ -1207,4 +1507,99 @@ fun SettingsScreen(
             }
         )
     }
+
+    // Dialog Tambah Akun Bank (Maksimal 5 Akun)
+    if (showAddBankDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddBankDialog = false },
+            shape = KelolaRadius.ShapeCard,
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = {
+                Text(
+                    text = "Tambah Rekening Bank",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Masukkan rincian akun bank transfer untuk toko Anda (${bankAccounts.size + 1}/5):",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedTextField(
+                        value = newBankName,
+                        onValueChange = { newBankName = it },
+                        label = { Text("Nama Bank (Misal: BCA, Mandiri, BRI, Jago)") },
+                        placeholder = { Text("Contoh: BCA") },
+                        singleLine = true,
+                        shape = KelolaRadius.ShapeInput,
+                        modifier = Modifier.fillMaxWidth().testTag("input_bank_name")
+                    )
+
+                    OutlinedTextField(
+                        value = newAccountNumber,
+                        onValueChange = { newAccountNumber = it.filter { c -> c.isDigit() || c == '-' } },
+                        label = { Text("Nomor Rekening") },
+                        placeholder = { Text("Contoh: 1234567890") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = KelolaRadius.ShapeInput,
+                        modifier = Modifier.fillMaxWidth().testTag("input_account_number")
+                    )
+
+                    OutlinedTextField(
+                        value = newAccountName,
+                        onValueChange = { newAccountName = it },
+                        label = { Text("Atas Nama (Pemilik Rekening)") },
+                        placeholder = { Text("Contoh: Toko Kelola / Budi") },
+                        singleLine = true,
+                        shape = KelolaRadius.ShapeInput,
+                        modifier = Modifier.fillMaxWidth().testTag("input_account_name")
+                    )
+
+                    if (bankInputError) {
+                        Text(
+                            text = "Nama Bank dan Nomor Rekening wajib diisi.",
+                            color = DangerRed,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newBankName.isBlank() || newAccountNumber.isBlank()) {
+                            bankInputError = true
+                        } else {
+                            onAddBankAccount(newBankName.trim(), newAccountName.trim(), newAccountNumber.trim())
+                            showAddBankDialog = false
+                            showSuccess("Rekening ${newBankName.trim()} berhasil ditambahkan")
+                        }
+                    },
+                    shape = KelolaRadius.ShapeInput,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.testTag("button_confirm_save_bank")
+                ) {
+                    Text("Simpan Rekening", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddBankDialog = false }) {
+                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        )
+    }
+
 }

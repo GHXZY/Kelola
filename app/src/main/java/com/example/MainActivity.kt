@@ -7,6 +7,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
@@ -53,6 +54,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -61,6 +63,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,12 +85,14 @@ import com.example.data.local.entity.ProductEntity
 import com.example.data.local.entity.TransactionEntity
 import com.example.data.local.entity.TransactionItemEntity
 import com.example.ui.MainViewModel
+import com.example.util.PdfReceiptGenerator
 import com.example.ui.cashier.CartSheet
 import com.example.ui.cashier.CashierScreen
 import com.example.ui.cashier.PaymentDialog
 import com.example.ui.cashier.PaymentScreen
 import com.example.ui.cashier.TransactionSuccessDialog
 import com.example.ui.components.ConfirmationDialog
+import com.example.ui.components.DonationDialog
 import com.example.ui.components.KelolaLogoBadge
 import com.example.ui.debts.DebtsScreen
 
@@ -146,6 +153,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val themeMode by viewModel.themeMode.collectAsState()
+            val colorThemeKey by viewModel.colorTheme.collectAsState()
+            val activeColorTheme = remember(colorThemeKey) {
+                com.example.ui.theme.ColorTheme.fromKey(colorThemeKey)
+            }
             val viewportWidth by viewModel.viewportWidth.collectAsState()
             val targetWidth = when (viewportWidth) {
                 "360dp" -> 360f
@@ -170,7 +181,7 @@ class MainActivity : ComponentActivity() {
                 fontScale = currentDensity.fontScale * scaleFactor
             )
 
-            MyApplicationTheme(darkTheme = isDark) {
+            MyApplicationTheme(darkTheme = isDark, colorTheme = activeColorTheme) {
                 CompositionLocalProvider(LocalDensity provides customDensity) {
                     Box(
                         modifier = Modifier
@@ -197,6 +208,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainApp(viewModel: MainViewModel) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -235,6 +247,7 @@ fun MainApp(viewModel: MainViewModel) {
     val previousSalesDate by viewModel.previousSalesDate.collectAsState()
     val previousSalesNote by viewModel.previousSalesNote.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
+    val colorTheme by viewModel.colorTheme.collectAsState()
     val viewportWidth by viewModel.viewportWidth.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val products by viewModel.products.collectAsState()
@@ -250,6 +263,21 @@ fun MainApp(viewModel: MainViewModel) {
     val reportPeriod by viewModel.reportPeriod.collectAsState()
     val lastCompletedTx by viewModel.lastCompletedTx.collectAsState()
     val notes by viewModel.notes.collectAsState()
+    val bankAccounts by viewModel.bankAccounts.collectAsState()
+    val showDonationDialog by viewModel.showDonationDialog.collectAsState()
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.checkAndTriggerDonationDialog()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     var isShowingNotes by remember { mutableStateOf(false) }
     var debtForPaymentScreen by remember { mutableStateOf<DebtEntity?>(null) }
@@ -346,8 +374,16 @@ fun MainApp(viewModel: MainViewModel) {
             previousSalesDate = previousSalesDate,
             previousSalesNote = previousSalesNote,
             themeMode = themeMode,
+            colorTheme = colorTheme,
             viewportWidth = viewportWidth,
             onSaveViewportWidth = { viewModel.updateViewportWidth(it) },
+            bankAccounts = bankAccounts,
+            onAddBankAccount = { bName, aName, aNum ->
+                viewModel.addBankAccount(bName, aName, aNum)
+            },
+            onRemoveBankAccount = { id ->
+                viewModel.removeBankAccount(id)
+            },
             onSaveBusinessInfo = { name, address, phone ->
                 viewModel.updateBusinessInfo(name, address, phone)
             },
@@ -374,6 +410,9 @@ fun MainApp(viewModel: MainViewModel) {
             },
             onUpdateThemeMode = { mode ->
                 viewModel.updateThemeMode(mode)
+            },
+            onUpdateColorTheme = { themeKey ->
+                viewModel.updateColorTheme(themeKey)
             },
             onExportBackup = {
                 viewModel.exportDataAsJson { jsonString ->
@@ -413,6 +452,7 @@ fun MainApp(viewModel: MainViewModel) {
             debt = debtForPaymentScreen!!,
             qrisImagePath = qrisImagePath,
             qrisMerchantName = qrisMerchantName,
+            bankAccounts = bankAccounts,
             onConfirmSettle = { debtId, amount, method, note ->
                 viewModel.settleDebt(debtId, amount, method, note)
                 debtForPaymentScreen = null
@@ -441,6 +481,7 @@ fun MainApp(viewModel: MainViewModel) {
             defaultPaymentMethod = defaultPaymentMethod,
             qrisImagePath = qrisImagePath,
             qrisMerchantName = qrisMerchantName,
+            bankAccounts = bankAccounts,
             onConfirmSale = { method, cash, customerName, customerPhone, debtNote, isChangePending, buyerNameForChange, changeNote ->
                 viewModel.processSale(
                     method, cash, customerName, customerPhone, debtNote,
@@ -846,6 +887,7 @@ fun MainApp(viewModel: MainViewModel) {
             defaultPaymentMethod = defaultPaymentMethod,
             qrisImagePath = qrisImagePath,
             qrisMerchantName = qrisMerchantName,
+            bankAccounts = bankAccounts,
             onConfirmSale = { method, cash, customerName, customerPhone, debtNote, isChangePending, buyerNameForChange, changeNote ->
                 viewModel.processSale(
                     method,
@@ -893,6 +935,20 @@ fun MainApp(viewModel: MainViewModel) {
                     selectedTxItems = viewModel.getTransactionItemsForDetail(tx.id)
                     selectedTxForDetail = tx
                 }
+            },
+            onShareReceipt = { targetTx ->
+                coroutineScope.launch {
+                    val items = viewModel.getTransactionItemsForDetail(targetTx.id)
+                    PdfReceiptGenerator.shareReceiptPdf(
+                        context = context,
+                        transaction = targetTx,
+                        items = items,
+                        businessName = businessName,
+                        businessAddress = businessAddress,
+                        businessPhone = businessPhone,
+                        receiptFooter = receiptFooter
+                    )
+                }
             }
         )
     }
@@ -910,7 +966,18 @@ fun MainApp(viewModel: MainViewModel) {
                 viewModel.deleteTransaction(tx.id)
                 selectedTxForDetail = null
             },
-            onDismiss = { selectedTxForDetail = null }
+            onDismiss = { selectedTxForDetail = null },
+            onShareReceipt = { targetTx, items ->
+                PdfReceiptGenerator.shareReceiptPdf(
+                    context = context,
+                    transaction = targetTx,
+                    items = items,
+                    businessName = businessName,
+                    businessAddress = businessAddress,
+                    businessPhone = businessPhone,
+                    receiptFooter = receiptFooter
+                )
+            }
         )
     }
 
@@ -1044,6 +1111,13 @@ fun MainApp(viewModel: MainViewModel) {
                 debtToEditItems = null
                 debtItemsForEdit = emptyList()
             }
+        )
+    }
+
+    // 15. Donation / Support Dialog (Tampil pertama kali download & tiap 5 jam)
+    if (showDonationDialog) {
+        DonationDialog(
+            onDismiss = { viewModel.dismissDonationDialog() }
         )
     }
     }
