@@ -49,55 +49,121 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS `promos` (
-                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        `name` TEXT NOT NULL,
-                        `isActive` INTEGER NOT NULL,
-                        `discountType` TEXT NOT NULL,
-                        `discountValue` INTEGER NOT NULL,
-                        `maxUsage` INTEGER NOT NULL,
-                        `requiredItemsJson` TEXT NOT NULL,
-                        `createdAt` INTEGER NOT NULL,
-                        `updatedAt` INTEGER NOT NULL
-                    )
-                    """.trimIndent()
-                )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_promos_isActive` ON `promos` (`isActive`)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_promos_createdAt` ON `promos` (`createdAt`)")
-                db.execSQL("ALTER TABLE `transactions` ADD COLUMN `promoId` INTEGER DEFAULT NULL")
-                db.execSQL("ALTER TABLE `transactions` ADD COLUMN `promoName` TEXT DEFAULT NULL")
-                db.execSQL("ALTER TABLE `transactions` ADD COLUMN `promoDiscount` INTEGER NOT NULL DEFAULT 0")
+        private fun safeAddColumn(db: SupportSQLiteDatabase, table: String, column: String, definition: String) {
+            var cursor: android.database.Cursor? = null
+            try {
+                cursor = db.query("PRAGMA table_info(`$table`)")
+                var exists = false
+                val nameIndex = cursor.getColumnIndex("name")
+                while (cursor.moveToNext()) {
+                    if (nameIndex != -1 && cursor.getString(nameIndex).equals(column, ignoreCase = true)) {
+                        exists = true
+                        break
+                    }
+                }
+                if (!exists) {
+                    db.execSQL("ALTER TABLE `$table` ADD COLUMN `$column` $definition")
+                }
+            } catch (_: Exception) {
+            } finally {
+                cursor?.close()
             }
+        }
+
+        private fun migrateV3ToV4(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `promos` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `name` TEXT NOT NULL,
+                    `isActive` INTEGER NOT NULL,
+                    `discountType` TEXT NOT NULL,
+                    `discountValue` INTEGER NOT NULL,
+                    `maxUsage` INTEGER NOT NULL,
+                    `requiredItemsJson` TEXT NOT NULL,
+                    `createdAt` INTEGER NOT NULL,
+                    `updatedAt` INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_promos_isActive` ON `promos` (`isActive`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_promos_createdAt` ON `promos` (`createdAt`)")
+            safeAddColumn(db, "transactions", "promoId", "INTEGER DEFAULT NULL")
+            safeAddColumn(db, "transactions", "promoName", "TEXT DEFAULT NULL")
+            safeAddColumn(db, "transactions", "promoDiscount", "INTEGER NOT NULL DEFAULT 0")
+        }
+
+        private fun migrateV4ToV5(db: SupportSQLiteDatabase) {
+            safeAddColumn(db, "promos", "freeProductId", "INTEGER DEFAULT NULL")
+            safeAddColumn(db, "promos", "freeQuantity", "INTEGER NOT NULL DEFAULT 1")
+        }
+
+        private fun migrateV5ToV6(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `notes` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `title` TEXT NOT NULL,
+                    `content` TEXT NOT NULL,
+                    `category` TEXT NOT NULL,
+                    `relatedEntityId` INTEGER DEFAULT NULL,
+                    `createdAt` INTEGER NOT NULL,
+                    `updatedAt` INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_notes_createdAt` ON `notes` (`createdAt`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_notes_category` ON `notes` (`category`)")
+        }
+
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {}
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {}
+        }
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) = migrateV3ToV4(db)
         }
 
         val MIGRATION_4_5 = object : Migration(4, 5) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `promos` ADD COLUMN `freeProductId` INTEGER DEFAULT NULL")
-                db.execSQL("ALTER TABLE `promos` ADD COLUMN `freeQuantity` INTEGER NOT NULL DEFAULT 1")
-            }
+            override fun migrate(db: SupportSQLiteDatabase) = migrateV4ToV5(db)
         }
 
         val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) = migrateV5ToV6(db)
+        }
+
+        val MIGRATION_1_6 = object : Migration(1, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS `notes` (
-                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        `title` TEXT NOT NULL,
-                        `content` TEXT NOT NULL,
-                        `category` TEXT NOT NULL,
-                        `relatedEntityId` INTEGER DEFAULT NULL,
-                        `createdAt` INTEGER NOT NULL,
-                        `updatedAt` INTEGER NOT NULL
-                    )
-                    """.trimIndent()
-                )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_notes_createdAt` ON `notes` (`createdAt`)")
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_notes_category` ON `notes` (`category`)")
+                migrateV3ToV4(db)
+                migrateV4ToV5(db)
+                migrateV5ToV6(db)
+            }
+        }
+
+        val MIGRATION_2_6 = object : Migration(2, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                migrateV3ToV4(db)
+                migrateV4ToV5(db)
+                migrateV5ToV6(db)
+            }
+        }
+
+        val MIGRATION_3_6 = object : Migration(3, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                migrateV3ToV4(db)
+                migrateV4ToV5(db)
+                migrateV5ToV6(db)
+            }
+        }
+
+        val MIGRATION_4_6 = object : Migration(4, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                migrateV4ToV5(db)
+                migrateV5ToV6(db)
             }
         }
 
@@ -108,8 +174,17 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "kelola_pos.db"
                 )
-                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_1_6,
+                        MIGRATION_2_6,
+                        MIGRATION_3_6,
+                        MIGRATION_4_6
+                    )
                     .addCallback(DatabaseCallback(scope))
                     .build()
                 INSTANCE = instance

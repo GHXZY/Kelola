@@ -20,8 +20,8 @@ android {
     applicationId = "com.aistudio.kelola.kasir"
     minSdk = 24
     targetSdk = 36
-    versionCode = 4
-    versionName = "1.3"
+    versionCode = 5
+    versionName = "1.4.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -56,6 +56,8 @@ android {
       keyPassword = keystoreProps.getProperty("KEY_PASSWORD")
         ?: (project.findProperty("KEY_PASSWORD") as? String)
         ?: System.getenv("KEY_PASSWORD")
+      enableV1Signing = true
+      enableV2Signing = true
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
