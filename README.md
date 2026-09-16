@@ -7,6 +7,7 @@
   **Aplikasi Kasir Sederhana, Cepat, dan 100% Offline untuk Mahasiswa Pejuang Usaha di Kampus**
 
   [![Android](https://img.shields.io/badge/Platform-Android_7.0+-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
+  [![Version](https://img.shields.io/badge/Versi_Terbaru-v1.6.0-006199?style=for-the-badge&logo=android&logoColor=white)](https://github.com/GHXZY/Kelola/releases/download/Kelola-Android-App/Kelola-release.apk)
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.0+-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
   [![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack_Compose_Material3-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
   [![Room Database](https://img.shields.io/badge/Database-Room_Local--First-FF6F00?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
@@ -16,7 +17,7 @@
 
   <p align="center">
     <a href="https://github.com/GHXZY/Kelola/releases/download/Kelola-Android-App/Kelola-release.apk">
-      <img src="https://img.shields.io/badge/⚡_Download_APK-Kelola--release.apk-00796B?style=for-the-badge&logo=android&logoColor=white" alt="Download APK Kelola" height="42" />
+      <img src="https://img.shields.io/badge/⚡_Download_APK-v1.6.0_Release-00796B?style=for-the-badge&logo=android&logoColor=white" alt="Download APK Kelola" height="42" />
     </a>
     &nbsp;&nbsp;
     <a href="https://github.com/GHXZY/Kelola/releases">
@@ -27,6 +28,7 @@
   <br />
 
   <p align="center">
+    <a href="#-pembaruan--versi-terbaru">Pembaruan & Versi</a> •
     <a href="#-tentang-kelola">Tentang Kelola</a> •
     <a href="#-fitur-unggulan">Fitur Unggulan</a> •
     <a href="#-tabel-perbandingan">Perbandingan</a> •
@@ -49,6 +51,43 @@ Banyak mahasiswa memulai usaha di lingkungan kampus—mulai dari berjualan makan
 * 💸 **Aplikasi POS Lain Mahal & Rumit**: Aplikasi kasir umum mengharuskan langganan bulanan, wajib registrasi email/nomor HP, serta penuh fitur rumit yang tidak dibutuhkan pedagang kecil.
 
 **Kelola** dirancang khusus untuk memecahkan semua masalah tersebut. Mengusung filosofi **Local-First & Zero Latency**, Kelola memberikan pengalaman kasir yang instan, tanpa login, tanpa internet, dan dilengkapi fitur khas mahasiswa seperti *Pelacak Kasbon Teman* dan *Pencatat Kembalian Tertunda*.
+
+---
+
+## 🚀 Pembaruan & Versi Terbaru
+
+### 📦 Versi 1.6.0 (Rilis Terbaru)
+[![Unduh APK v1.6.0](https://img.shields.io/badge/Download_APK-v1.6.0-006199?style=flat-square&logo=android&logoColor=white)](https://github.com/GHXZY/Kelola/releases/download/Kelola-Android-App/Kelola-release.apk)
+*Tanggal Rilis: September 2026 | Berkas: `Kelola-release.apk` (~16.7 MB)*
+
+Versi **1.6.0** menghadirkan pembaruan besar pada sistem kustomisasi visual, manajemen pembayaran kasir, pencetakan dan pembagian struk digital (PDF), hingga peningkatan kenyamanan antarmuka pengguna:
+
+1. **🎨 4 Pilihan Tema Warna Lengkap (Personalisasi Seluruh Aplikasi)**
+   - Mendukung 4 palet warna utama: **Biru** (*Oceanic Modernity*), **Pink** (*Blush Blossom*), **Coklat** (*Terra & Flora*), dan **Orange** (*Solar Flare*).
+   - Setiap tema otomatis mengadaptasi seluruh halaman (Beranda, Kasir, Keranjang, Laporan, Grafik Arus Kas, Produk, Kasbon, Catatan, Promo, dan Pengaturan) baik dalam **Mode Terang (*Light*)** maupun **Mode Gelap (*Dark*)**.
+   - Dilengkapi kartu swatch warna interaktif dengan indikator centang pada menu Pengaturan.
+
+2. **💳 Metode Pembayaran Default E-Wallet & Rekening Bank Toko**
+   - Opsi metode pembayaran bawaan kasir kini beralih ke **E-Wallet** (sebelumnya Emoney) dengan integrasi mulus ke dialog kasir.
+   - Fitur **Akun Rekening Bank Transfer**: Simpan hingga 5 rekening bank toko (Nama Bank, Nomor Rekening, dan Atas Nama) agar kasir dapat memperlihatkan atau menyalin detail rekening saat pelanggan memilih metode Transfer.
+   - Header akun rekening bank didesain ringkas dan rapi dalam satu baris horizontal.
+
+3. **📄 Ekspor & Pembagian Struk Transaksi Digital (PDF)**
+   - Menghasilkan struk resmi berformat PDF beresolusi tinggi langsung dari aplikasi secara *offline*.
+   - Memuat detail identitas toko, rincian barang belanjaan, diskon/promo, metode pembayaran, hingga catatan kaki struk.
+   - Tombol **Bagikan Struk** ditempatkan di pojok kanan atas dialog detail transaksi untuk kemudahan akses kirim struk ke WhatsApp pelanggan.
+
+4. **✨ Tata Letak Baru Popup Detail Transaksi**
+   - Penataan ulang tombol aksi di bagian bawah dialog detail transaksi: tombol **Batalkan & Retur** berdampingan dengan tombol **Hapus**, serta tombol **Tutup** ditempatkan tepat di tengah secara proporsional.
+
+5. **❤️ Pop-up Apresiasi & Dukungan Donasi Pengembang**
+   - Pop-up ucapan terima kasih dan informasi donasi sukarela untuk mendukung kelangsungan pengembangan aplikasi Kelola.
+   - Muncul saat pertama kali aplikasi dibuka dan secara berkala setiap 5 jam sekali.
+   - Dilengkapi fitur satu ketukan untuk menyalin nomor rekening Bank BSI (7263416923 A/N GHIFFARI TAUFANI).
+
+6. **⚡ Optimalisasi Kinerja & Android 16 Readiness**
+   - Dukungan penuh kompilasi Kotlin 2.0+ dan Android SDK 36.
+   - Penguatan integritas data lokal Room Database dan peningkatan efisiensi render antarmuka Jetpack Compose.
 
 ---
 
