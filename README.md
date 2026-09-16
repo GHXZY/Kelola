@@ -80,12 +80,7 @@ Versi **1.6.0** menghadirkan pembaruan besar pada sistem kustomisasi visual, man
 4. **✨ Tata Letak Baru Popup Detail Transaksi**
    - Penataan ulang tombol aksi di bagian bawah dialog detail transaksi: tombol **Batalkan & Retur** berdampingan dengan tombol **Hapus**, serta tombol **Tutup** ditempatkan tepat di tengah secara proporsional.
 
-5. **❤️ Pop-up Apresiasi & Dukungan Donasi Pengembang**
-   - Pop-up ucapan terima kasih dan informasi donasi sukarela untuk mendukung kelangsungan pengembangan aplikasi Kelola.
-   - Muncul saat pertama kali aplikasi dibuka dan secara berkala setiap 5 jam sekali.
-   - Dilengkapi fitur satu ketukan untuk menyalin nomor rekening Bank BSI (7263416923 A/N GHIFFARI TAUFANI).
-
-6. **⚡ Optimalisasi Kinerja & Android 16 Readiness**
+5. **⚡ Optimalisasi Kinerja & Android 16 Readiness**
    - Dukungan penuh kompilasi Kotlin 2.0+ dan Android SDK 36.
    - Penguatan integritas data lokal Room Database dan peningkatan efisiensi render antarmuka Jetpack Compose.
 
